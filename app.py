@@ -10,7 +10,7 @@ import os
 from uuid import uuid4
 from pymongo import MongoClient
 from typing import AsyncGenerator, Any, Dict
-from langfuse.callback import CallbackHandler
+# from langfuse.callback import CallbackHandler
 from datetime import datetime, timezone, timedelta
 
 # Tắt LangFuse error logging

@@ -1,0 +1,25 @@
+vector_storage:
+  url: http://103.90.224.126:9200
+  index_name: mavap
+  score_threshold: 0.5
+  top_k: 5
+  max_chars: 120000
+  user: None
+  password: None
+  connection_params:
+    timeout: 5  
+    retry_on_timeout: true
+    max_retries: 3
+    sniff_on_start: true
+    sniff_on_connection_fail: true
+
+embedding:
+  qwen:
+    url: http://103.90.224.126:8000/embed
+    api-key: MAVAP
+    batch_size: 4
+    accounting_prompt: "Cho một câu truy vấn thuộc lĩnh vực thủ tục hành chính công, hãy truy xuất các đoạn văn có liên quan trả lời truy vấn đó."
+    general_prompt: "Given a web search query, retrieve relevant passages that answer the query"
+    dim_size: 768
+    model_name: intfloat/multilingual-e5-base
+

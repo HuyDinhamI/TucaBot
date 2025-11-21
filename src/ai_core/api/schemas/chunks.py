@@ -33,14 +33,6 @@ class CreateChunkRequest(BaseModel):
         default=[],
         description="List of application IDs that this chunk is associated with"
     )
-    misa_id: Optional[str] = Field(
-        default=None,
-        description="Unique identifier of the user who created this chunk"
-    )
-    tenant_id: str = Field(
-        default=None,
-        description="ID of the organization (Tenant) owning this chunk"
-    )
     document_id: str = Field(
         description="StringUUID of the document that this chunk belongs to"
     )
@@ -56,9 +48,7 @@ class CreateChunkRequest(BaseModel):
     def to_db_model(self, embedding_status) -> DocumentChunk:
         """Convert to db model format"""
         document = DocumentChunk(
-            tenant_id=self.tenant_id,
             app_ids=self.app_ids,
-            misa_id=self.misa_id,
             id=self.id,
             title=self.title,
             content=self.content,
@@ -134,10 +124,6 @@ class SearchResult(BaseModel):
         default=0.0,
         description="Score of the document chunk"
     )
-    tenant_id: Optional[str] = Field(
-        default=None,
-        description="ID of the organization (Tenant) owning this chunk"
-    )
     document_id: Optional[str] = Field(
         default=None,
         description="ID of the document that this chunk belongs to"
@@ -154,3 +140,13 @@ class SearchResult(BaseModel):
         {},
         description="Document metadata including name, data source type, file ID, etc."
     )
+
+class VBPLStatusRequest(BaseModel):
+    app_id: str = Field(description="Application ID")
+    number: str = Field(description="VBPL number (e.g., '65/2013/NĐ-CP')")
+
+class VBPLStatusResponse(BaseModel):
+    effective_date: Optional[str] = Field(None, description="Ngày có hiệu lực")
+    expiration_date: Optional[str] = Field(None, description="Ngày hết hiệu lực")
+    found: bool = Field(description="Có tìm thấy VBPL hay không")
+    number: str = Field(description="Số hiệu VBPL")

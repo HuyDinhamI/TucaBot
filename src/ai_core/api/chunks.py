@@ -13,7 +13,8 @@ from src.ai_core.api.schemas.chunks import (
     GetStatusRequest,
     UpdateStatusRequest,
     Status,
-    SearchRequest
+    SearchRequest,
+    VBPLStatusResponse
 )
 from src.ai_core.api.chunk_manager import ChunkManager
 from src.ai_core.models.chunks import SearchResult
@@ -32,7 +33,7 @@ async def search(
     ),
 ):
     """
-    Tìm kiếm chunks theo query, top_k, score_threshold và env.
+    Tìm kiếm chunks theo query, top_k, scsearchore_threshold và env.
     """
     try:
         start_time = time.time()
@@ -125,20 +126,53 @@ async def add_chunks(
                 status_code=400, detail="Maximum number of chunks per request is 20"
             )
 
+        print(f"\n=== ADD CHUNKS REQUEST ===")
+        print(f"Number of chunks: {len(chunks)}")
+        
         start_time = time.time()
-        res = await chunk_manager.add_chunks(
-            chunks=[c.to_db_model(embedding_status=True) for c in chunks],
-        )
+        
+        # Convert to DB models
+        db_chunks = [c.to_db_model(embedding_status=True) for c in chunks]
+        
+        # Log thông tin chunks trước khi add
+        for idx, chunk in enumerate(db_chunks):
+            print(f"\nChunk {idx + 1}:")
+            print(f"  ID: {chunk.id}")
+            print(f"  Title: {chunk.title}")
+            print(f"  Content length: {len(chunk.content)}")
+            print(f"  Document ID: {chunk.document_id}")
+            print(f"  App IDs: {chunk.app_ids}")
+            print(f"  Chunk index: {chunk.chunk_index}")
+            print(f"  Char count: {chunk.char_count} (type: {type(chunk.char_count).__name__})")
+            print(f"  Content hash: {chunk.content_hash}")
+        
+        res = await chunk_manager.add_chunks(chunks=db_chunks)
+        
         execution_time = time.time() - start_time
-        print(f"Execution create_chunks time: {execution_time}")
+        print(f"\nExecution create_chunks time: {execution_time}")
+        print(f"Result - Success: {len(res.success_ids)}, Failed: {len(res.failed_ids)}")
+        if res.failed_ids:
+            print(f"Failed IDs: {res.failed_ids}")
+        print(f"=== END ADD CHUNKS REQUEST ===\n")
 
         return res
 
     except ValueError as e:
+        print(f"\n=== ValueError in add_chunks ===")
+        print(f"Error: {str(e)}")
         print(traceback.format_exc())
+        print(f"=== END ValueError ===\n")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"\n=== Exception in add_chunks ===")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print(f"Number of chunks in request: {len(chunks)}")
+        for idx, chunk in enumerate(chunks):
+            print(f"\nChunk {idx + 1} data:")
+            print(f"  {chunk.model_dump()}")
         print(traceback.format_exc())
+        print(f"=== END Exception ===\n")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -221,7 +255,8 @@ async def delete_chunks(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-    
+
+
 # publish chunk by list document_ids
 @router.put("/documents/status")
 async def update_document_status(
@@ -269,4 +304,39 @@ async def update_document_status(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/vbpl/status", response_model=VBPLStatusResponse)
+async def get_vbpl_status(
+    app_id: str = Query(..., description="Application ID"),
+    number: str = Query(..., description="VBPL number (e.g., '65/2013/NĐ-CP')")
+):
+    """
+    Kiểm tra trạng thái hiệu lực của VBPL dựa trên app_id và số hiệu.
+    
+    Trả về thông tin về ngày có hiệu lực và ngày hết hiệu lực của văn bản pháp luật.
+    """
+    try:
+        start_time = time.time()
+        
+        result = await chunk_manager.get_vbpl_status(
+            app_id=app_id,
+            number=number
+        )
+        
+        execution_time = time.time() - start_time
+        print(f"Execution get_vbpl_status time: {execution_time}")
+        
+        return VBPLStatusResponse(
+            effective_date=result["effective_date"],
+            expiration_date=result["expiration_date"],
+            found=result["found"],
+            number=result["number"]
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

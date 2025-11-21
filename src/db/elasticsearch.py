@@ -83,8 +83,12 @@ class AVAElasticsearchStore(ElasticsearchStore):
             "id": {"type": "keyword"},
             "document_id": {"type": "keyword"},
             "app_ids": {"type": "keyword"},
-            "misa_id": {"type": "keyword"},
-            "tenant_id": {"type": "keyword"},
+            "char_count": {"type": "integer"},
+            "chunk_index": {"type": "integer"},
+            "hit_count": {"type": "integer"},
+            "enabled": {"type": "boolean"},
+            "embedding_status": {"type": "boolean"},
+            "published": {"type": "boolean"},
         }
 
     def get_index_info(self) -> Dict[Text, Any]:
@@ -208,9 +212,33 @@ class AVAElasticsearchStore(ElasticsearchStore):
                     return err_ids
                 return []
             except BulkIndexError as e:
-                logger.error(f"Error adding texts: {e}")
-                firstError = e.errors[0].get("index", {}).get("error", {})
-                logger.error(f"First error reason: {firstError.get('reason')}")
+                logger.error(f"=== BULK INDEX ERROR ===")
+                logger.error(f"Total errors: {len(e.errors)}")
+                
+                # Log chi tiết từng lỗi
+                for idx, error in enumerate(e.errors):
+                    error_info = error.get("index", {})
+                    error_detail = error_info.get("error", {})
+                    logger.error(f"\n--- Error {idx + 1} ---")
+                    logger.error(f"Document ID: {error_info.get('_id')}")
+                    logger.error(f"Status: {error_info.get('status')}")
+                    logger.error(f"Error type: {error_detail.get('type')}")
+                    logger.error(f"Error reason: {error_detail.get('reason')}")
+                    if error_detail.get('caused_by'):
+                        logger.error(f"Caused by: {error_detail.get('caused_by')}")
+                
+                # Log documents bị lỗi
+                failed_doc_ids = [e["index"]["_id"] for e in e.errors]
+                logger.error(f"\n=== FAILED DOCUMENTS ({len(failed_doc_ids)}) ===")
+                for request in requests:
+                    if request["_id"] in failed_doc_ids:
+                        logger.error(f"\nDocument ID: {request['_id']}")
+                        logger.error(f"Text preview: {request.get(self._store.text_field, '')[:200]}...")
+                        logger.error(f"Metadata: {request.get('metadata')}")
+                        if self._store.vector_field in request:
+                            logger.error(f"Vector length: {len(request[self._store.vector_field])}")
+                
+                logger.error(f"=== END BULK INDEX ERROR ===\n")
                 raise e
 
         else:

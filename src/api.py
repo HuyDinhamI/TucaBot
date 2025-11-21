@@ -14,13 +14,13 @@ from fastapi import (
     BackgroundTasks,
 )
 from pydantic import BaseModel, HttpUrl, Field
-from langfuse.callback import CallbackHandler
+# from langfuse.callback import CallbackHandler
 from sse_starlette.sse import EventSourceResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 
 from src.ai_core.api.chunks import router as chunks_router
-from src.utils.read_file import get_file_content_from_file_id
+# from src.utils.read_file import get_file_content_from_file_id
 from src.graph import graph
 from src.settings import settings
 
@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.warning("Shutting down the app ...")
 
-app = FastAPI(root_path=settings.API_CONF["root_path"], lifespan=lifespan)
+app = FastAPI(root_path="/mavap/api", lifespan=lifespan)
 app.include_router(chunks_router, tags=["Chunks Management"])
 app.add_middleware(
     CORSMiddleware,
@@ -355,16 +355,16 @@ async def dispatch(
         "config": config.copy(),
         "runs": [],
     }
-    langfuse_handler = CallbackHandler(
-        secret_key=settings.LANGFUSE_CONF["secret_key"],
-        public_key=settings.LANGFUSE_CONF["public_key"],
-        host=settings.LANGFUSE_CONF["host"],
-        trace_name=settings.LANGFUSE_CONF["trace_name"],
-        enabled=settings.LANGFUSE_CONF["enabled"],
-        session_id=session_id,
-        user_id=config.get("configurable", {}).get("user_id", ""),
-        version=settings.LANGFUSE_CONF["version"],
-    )
+    # langfuse_handler = CallbackHandler(
+    #     secret_key=settings.LANGFUSE_CONF["secret_key"],
+    #     public_key=settings.LANGFUSE_CONF["public_key"],
+    #     host=settings.LANGFUSE_CONF["host"],
+    #     trace_name=settings.LANGFUSE_CONF["trace_name"],
+    #     enabled=settings.LANGFUSE_CONF["enabled"],
+    #     session_id=session_id,
+    #     user_id=config.get("configurable", {}).get("user_id", ""),
+    #     version=settings.LANGFUSE_CONF["version"],
+    # )
     if "configurable" not in config:
         config["configurable"] = {}
 
@@ -389,5 +389,5 @@ if __name__ == "__main__":
     uvicorn.run(
         "api:app",
         host="0.0.0.0",
-        port=8564,
+        port=9669,
     )
