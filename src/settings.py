@@ -72,6 +72,10 @@ class GlobalConfig(BaseSettings):
         "settings/agent.yaml"
     )
     
+    MINIO_CONF: Dict[str, Any] = ConfigReaderInstance.yaml.read_config_from_file(
+        "settings/minio.yaml"
+    )
+    
     class Config:
         """Loads the dotenv file."""
 

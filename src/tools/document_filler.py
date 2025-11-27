@@ -119,7 +119,7 @@ async def generate_filled_document(
         
         # Step 1: Tìm kiếm mẫu đơn có placeholder
         results: list[SearchResult] = await search_service.search(
-            app_id="c5c42380-3e7a-4b8d-b6f3-51c6c9e7e4f1",
+            app_id=ToolsConfig. document_template_app_id,
             query=f"mẫu đơn {document_type}",
             top_k=3,
             score_threshold=0.3,

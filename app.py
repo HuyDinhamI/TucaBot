@@ -246,15 +246,21 @@ async def process_events():
                     yield "\n\n**</think>**\n\n"
                     start_think = False
 
-                # Trích xuất nội dung từ cấu trúc mới
-                content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
-                if content:
-                    yield content
-                # pass
+                if event["metadata"]. get("langgraph_node") == "ask_user":
+                    # Trích xuất nội dung từ cấu trúc mới
+                    content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
+                    if content:
+                        yield content
+
+                if event["metadata"]. get("langgraph_node") == "answer_agent":
+                    # Trích xuất nội dung từ cấu trúc mới
+                    content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
+                    if content:
+                        yield content
+                    # pass
             
         # Bắt sự kiện trả lời từ LLM
         elif event["event"] == "on_chat_model_stream":
-            
             answer_content = event["data"]["chunk"].content
             if answer_content:
                 yield answer_content

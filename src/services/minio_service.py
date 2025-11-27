@@ -4,19 +4,21 @@ import logging
 from typing import Optional
 from minio import Minio
 from minio.error import S3Error
+from src.config import MinioConfig
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger("uvicorn. error")
 
 class MinioService:
     """Service để kết nối và thao tác với Minio storage"""
     
     def __init__(self):
         self.client = Minio(
-            endpoint = "103.90.224.126:9000",
-            access_key="admin",
-            secret_key="Mavap123",
-            secure=False
+            endpoint=MinioConfig.endpoint,
+            access_key=MinioConfig.access_key,
+            secret_key=MinioConfig.secret_key,
+            secure=MinioConfig.secure
         )
+        self.default_bucket = MinioConfig.bucket_name
         
     async def download_file(self, file_path: str, bucket_name: str = "default") -> Optional[str]:
         """

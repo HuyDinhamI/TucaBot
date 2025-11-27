@@ -4,9 +4,9 @@ from pydantic import Field
 from langchain_core.tools import tool
 
 from src.ai_core.services import search_service
-from src.config import SearchConfig
+from src.config import SearchConfig, ToolsConfig
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging. getLogger("uvicorn.error")
 
 @tool
 async def lookup_administrative_division(
@@ -23,12 +23,12 @@ async def lookup_administrative_division(
         
         # Tìm kiếm với filter chỉ lấy dữ liệu địa chính
         results = await search_service.search(
-            app_id="1234abcd-5678-90ef-abcd-1234567890ef",
+            app_id=ToolsConfig.administrative_lookup_app_id,
             query=query,
             top_k=10,
             score_threshold=0.5,
             filters=[
-                {"terms": {"metadata.app_ids": ["1234abcd-5678-90ef-abcd-1234567890ef"]}}
+                {"terms": {"metadata.app_ids": [ToolsConfig.administrative_lookup_app_id]}}
             ]
         )
         

@@ -1,3 +1,14 @@
 agent_id: "88886666-9999-4666-aaaa-88889999ffff" 
 # agent_id: "69abcdef-1234-4123-8123-123456789abc"
 app_code: "accounting-expert"
+
+# App IDs cho các tools
+tools:
+  search:
+    app_id: "88886666-9999-4666-aaaa-88889999ffff"
+  administrative_lookup:
+    app_id: "1234abcd-5678-90ef-abcd-1234567890ef"
+  document_template:
+    app_id: "c5c42380-3e7a-4b8d-b6f3-51c6c9e7e4f1"
+  document_filler:
+    app_id: "c5c42380-3e7a-4b8d-b6f3-51c6c9e7e4f1"

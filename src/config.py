@@ -33,8 +33,20 @@ class SearchConfig:
     agent_id = settings.AGENT_CONF["agent_id"]
     top_docs = settings.SEARCH_CONF["vector_storage"]["top_k"]
     max_chars = settings.SEARCH_CONF["vector_storage"]["max_chars"]
-    score_threshold = settings.SEARCH_CONF["vector_storage"]["score_threshold"]
-    max_retries = settings.SEARCH_CONF["vector_storage"]["connection_params"]["max_retries"]
+    score_threshold = settings. SEARCH_CONF["vector_storage"]["score_threshold"]
+    max_retries = settings. SEARCH_CONF["vector_storage"]["connection_params"]["max_retries"]
+
+class MinioConfig:
+    endpoint = settings.MINIO_CONF["connection"]["endpoint"]
+    access_key = settings.MINIO_CONF["connection"]["access_key"]
+    secret_key = settings. MINIO_CONF["connection"]["secret_key"]
+    secure = settings.MINIO_CONF["connection"]["secure"]
+    bucket_name = settings.MINIO_CONF["buckets"]["default"]
+
+class ToolsConfig:
+    search_app_id = settings.AGENT_CONF["tools"]["search"]["app_id"]
+    administrative_lookup_app_id = settings. AGENT_CONF["tools"]["administrative_lookup"]["app_id"]
+    document_template_app_id = settings. AGENT_CONF["tools"]["document_template"]["app_id"]
 
 class AgentConfig:
     debug = True

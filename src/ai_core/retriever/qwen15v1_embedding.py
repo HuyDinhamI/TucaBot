@@ -44,29 +44,22 @@ class Qwen15V1Embedding(Embeddings):
         t1 =  time.time()
         embeddings = []
         for i in range(0, len(texts), self.batch_size):
-            try:
-                responses = requests.post(
-                    self.url,
-                    headers = {
-                        "Content-Type": "application/json",
-                        "x-api-key": self.api_key,
-                    },
-                    json = {
-                        "texts": texts[i:i+self.batch_size],
-                    },
-                    timeout = 10
-                )
-                responses.raise_for_status()
-                result = responses.json()
-                # API returns {"embeddings": [[...], [...]]}
-                batch_embeddings = result.get("embeddings", [])
-                embeddings.extend(batch_embeddings)
-                logger.debug(f"Successfully embedded {len(texts[i:i+self.batch_size])} texts, got {len(batch_embeddings)} vectors")
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Embedding service error: {e}")
-                if hasattr(e, 'response') and hasattr(e.response, 'text'):
-                    logger.error(f"Response: {e.response.text}")
-                raise Exception(f"Failed to get embeddings: {str(e)}")
+            responses = requests.post(
+                self.url + "/embed",
+                headers = {
+                    "Content-Type": "application/json",
+                    "api-key": self.api_key,
+                    "model": self.model_name,
+                },
+                json = {
+                    "embedding_size": self.dim_size,
+                    "embedding_start": None,
+                    "inputs": texts[i:i+self.batch_size],
+                    "normalize": True
+                },
+                timeout = 10
+            )
+            embeddings.extend(responses.json())
         
         logger.debug(f"Embedding with LLMEncoder: {time.time() - t1}")
         return embeddings
