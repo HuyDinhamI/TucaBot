@@ -12,9 +12,9 @@ class MinioService:
     
     def __init__(self):
         self.client = Minio(
-            "10.8.28.45:9000",
+            endpoint = "103.90.224.126:9000",
             access_key="admin",
-            secret_key="12345678@Abc",
+            secret_key="Mavap123",
             secure=False
         )
         

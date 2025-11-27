@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
-st.set_page_config(layout="wide", page_title="MISAJSC")
+st.set_page_config(layout="wide", page_title="MAVAP")
 import time
 import asyncio
 import logging
@@ -122,7 +122,7 @@ def init():
     
     st.session_state.config = {"configurable": data, "recursion_limit": 100}
 
-st.title("Hỏi đáp với TucaBot")
+st.title("Hỏi đáp với MAVAP Bot")
 
 # Tạo expander cho logs và events
 logs_expander = st.expander("Show Logs", expanded=False)

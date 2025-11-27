@@ -15,11 +15,11 @@ vector_storage:
 
 embedding:
   qwen:
-    url: http://103.90.224.126:8000/embed
+    url: http://103.90.224.126:7997/embed
     api-key: MAVAP
     batch_size: 4
     accounting_prompt: "Cho một câu truy vấn thuộc lĩnh vực thủ tục hành chính công, hãy truy xuất các đoạn văn có liên quan trả lời truy vấn đó."
     general_prompt: "Given a web search query, retrieve relevant passages that answer the query"
-    dim_size: 768
-    model_name: intfloat/multilingual-e5-base
+    dim_size: 1024
+    model_name: Qwen/Qwen3-Embedding-0.6B
 

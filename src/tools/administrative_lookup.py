@@ -25,7 +25,7 @@ async def lookup_administrative_division(
         results = await search_service.search(
             app_id="1234abcd-5678-90ef-abcd-1234567890ef",
             query=query,
-            top_k=3,
+            top_k=10,
             score_threshold=0.5,
             filters=[
                 {"terms": {"metadata.app_ids": ["1234abcd-5678-90ef-abcd-1234567890ef"]}}
