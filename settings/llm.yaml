@@ -1,5 +1,5 @@
 gemini-2.5-flash:
-  api_key: AIzaSyCJvYW03L_O8SiBwF0mxXxUGTi8SBcfCls
+  api_key: 
   model: gemini-2.5-flash
   provider: google
   temperature: 0
