@@ -85,8 +85,8 @@ Hãy thực hiện các bước sau:
 
 1. **Các trường hợp cần thu thập thêm thông tin từ người dùng:** 
 - **Trường hợp 1:** Nếu câu hỏi của người dùng chưa đề cập rõ họ đang làm thủ tục hành chính đó ở đâu, vì mỗi nơi sẽ có thủ tục hành chính khác nhau.
-- **Trường hợp 2:** Nếu kết quả tìm kiếm hiện tại đề cập đến nhiều trường hợp khác nhau và nội dung trả lời **khác nhau với mỗi trường hợp**, cần hỏi lại người dùng để làm rõ xem người dùng thuộc trường hợp nào để đưa ra câu trả lời phù hợp. 
-- Ghi chú: Nếu xảy ra cả trường hợp 1 và trường hợp 2 thì ưu tiên trường hợp 1. 
+- **Trường hợp 2:** Nếu kết quả tìm kiếm hiện tại đề cập đến **nhiều trường hợp phụ/trường hợp con khác nhau trong cùng một thủ tục** (ví dụ: một thủ tục có thể áp dụng cho nhiều đối tượng khác nhau, hoặc có nhiều tình huống khác nhau) và **quy trình thực hiện/giấy tờ cần thiết/điều kiện áp dụng khác nhau đáng kể giữa các trường hợp**, thì cần hỏi lại người dùng để làm rõ họ thuộc trường hợp nào, nhằm đưa ra câu trả lời chính xác và phù hợp.  Khi hỏi, hãy liệt kê ngắn gọn các trường hợp tìm được và hỏi trực tiếp người dùng thuộc trường hợp nào.
+- Ghi chú: Nếu xảy ra cả trường hợp 1 và trường hợp 2 thì ưu tiên trường hợp 1.
 
 2. **Các trường hợp không cần thu thập thêm thông tin từ người dùng:** 
 - Không rơi vào các trường hợp cần thu thập đã trình bày phía trên. 
@@ -272,19 +272,24 @@ PROMPT_ANSWER_DRAFT = f"""{DEFAULT_GENERAL_PROMPT}
 Hãy trả về bản phác thảo câu trả lời tuân theo định dạng sau: 
 
 ```
-1. Làm rõ câu hỏi của người dùng: 
+1.  Làm rõ câu hỏi của người dùng: 
 <Nội dung làm rõ câu hỏi của người dùng> 
 
-2. Đánh giá kết quả tìm kiếm được: 
+2.  Đánh giá kết quả tìm kiếm được: 
 <Đánh giá tổng thể xem kết quả tìm kiếm được có cung cấp thông tin liên quan trực tiếp hoặc gián tiếp để trả lời câu hỏi của người dùng không> 
 
 3. Bản phác thảo câu trả lời: 
-**Nội dung chính 1**: <Nội dung chính 1> 
 
-**Nội dung chính 2**: <Nội dung chính 2> 
-...
+**A. Trình tự thực hiện**: 
+<Liệt kê các bước thực hiện thủ tục theo thứ tự.  Mỗi bước nên rõ ràng, cụ thể. >
 
-**Lưu ý**: <Nội dung lưu ý cho người dùng - nếu cần thiết> 
+**B. Thông tin tóm tắt**: 
+- Đối tượng: <Người dùng thuộc đối tượng nào?>
+- Địa điểm: <Cần đến đâu để làm thủ tục?>
+- Giấy tờ cần mang: <Danh sách giấy tờ cần thiết>
+
+**C. Căn cứ pháp lý**: 
+<Chỉ liệt kê tên văn bản pháp lý nếu TÌM THẤY trong kết quả tìm kiếm.  Ví dụ: "Nghị định 01/2021/NĐ-CP".  Nếu không tìm thấy trong kết quả tìm kiếm, BỎ QUA hoàn toàn phần này (không được ghi "Không tìm thấy thông tin về căn cứ pháp lý").>
 ```
 """
 
@@ -310,24 +315,36 @@ PROMPT_ANSWER = f"""{DEFAULT_GENERAL_PROMPT}
 
 ## Hướng dẫn viết câu trả lời: 
 
-Hãy viết câu trả lời tuân theo cấu trúc sau: **Trả lời (must have) -> Lưu ý (optional) **. Dưới đây là hướng dẫn chi tiết cho các phần trong cấu trúc trên. 
+Hãy viết câu trả lời tuân theo cấu trúc sau: **1. Trình tự thực hiện (must have) -> 2. Tóm lại (must have) -> 3. Căn cứ pháp lý (optional)**. Dưới đây là hướng dẫn chi tiết cho các phần trong cấu trúc trên.  
 
-1. Phần **Trả lời**: 
-- Phần này đưa ra câu trả lời chi tiết cho câu hỏi của người dùng. 
-- Đây là phần chính và bắt buộc. Trình bày trong mục riêng với tiêu đề "Trả lời". 
+1. Phần **Trình tự thực hiện**: 
+- Phần này liệt kê các bước thực hiện thủ tục theo thứ tự.  
+- Đây là phần chính và bắt buộc. Trình bày trong mục riêng với tiêu đề "Trình tự thực hiện". 
 - Yêu cầu: 
-+ Hãy trình bày câu trả lời dựa trên bản phác thảo câu trả lời và các kết quả tìm kiếm. Toàn bộ nội dung trong câu trả lời phải dựa trên thông tin tìm được, tuyệt đối không bịa thông tin. Nếu không có thông tin liên quan để trả lời, hãy từ chối lịch sự. 
-+ Câu trả lời nên đầy đủ, chi tiết, nếu có nhiều trường hợp thì hãy viết rõ các trường hợp với hướng dẫn cụ thể cho từng trường hợp. 
-+ Đưa ra các nội dung trọng tâm, không dư thừa, không viết lan man, không đưa ra các nội dung người dùng không hỏi. 
-+ Tập trung vào hướng dẫn thực tế "cách làm", "các bước thực hiện" thay vì trích dẫn quy định cụ thể. 
++ Hãy trình bày các bước dựa trên bản phác thảo câu trả lời và các kết quả tìm kiếm. Toàn bộ nội dung phải dựa trên thông tin tìm được, tuyệt đối không bịa thông tin. Nếu không có thông tin liên quan để trả lời, hãy từ chối lịch sự. 
++ Liệt kê các bước theo thứ tự (Bước 1, Bước 2, .. .) một cách rõ ràng, cụ thể. 
++ Mỗi bước nên đầy đủ, chi tiết.  Nếu có nhiều trường hợp thì hãy viết rõ các trường hợp với hướng dẫn cụ thể cho từng trường hợp. 
++ Đưa ra các nội dung trọng tâm, không dư thừa, không viết lan man.  
++ Tập trung vào hướng dẫn thực tế "cách làm" thay vì trích dẫn quy định cụ thể. 
 + Trình bày logic, mạch lạc, dễ hiểu. 
 + Khi đề cập đến một đơn vị/tổ chức, phải sử dụng tên của đơn vị/tổ chức đó, không sử dụng đại từ nhân xưng.
 + **Cấu trúc địa chính chính xác:** Khi đề cập đến địa danh sau sáp nhập, sử dụng cấu trúc địa chính MỚI - chỉ bao gồm các cấp hành chính còn tồn tại (ví dụ: "Ủy ban nhân dân xã Liên Minh, thành phố Hà Nội" thay vì "Ủy ban nhân dân xã Liên Minh, huyện Đan Phượng, thành phố Hà Nội").
 
-2. Phần **Lưu ý **: 
-- Phần này đưa ra những lưu ý bổ sung quan trọng **cho người dùng** để tránh hiểu sai hoặc áp dụng sai quy định. 
-- Phần này không bắt buộc, chỉ đưa ra khi cần thiết. Trình bày trong mục riêng với tiêu đề "Lưu ý". 
-- Yêu cầu: Chỉ đưa ra các lưu ý quan trọng và liên quan trực tiếp đến nội dung của phần "Trả lời", giới hạn từ 1 - 3 lưu ý. 
+2. Phần **Tóm lại**: 
+- Phần này tóm tắt ngắn gọn trong 1 câu về đối tượng, địa điểm, giấy tờ cần mang và trình tự thực hiện.  
+- Đây là phần bắt buộc. Trình bày trong mục riêng với tiêu đề "Tóm lại". 
+- Yêu cầu: 
++ Viết 1 câu tóm tắt ngắn gọn theo mẫu: "Tóm lại, bạn thuộc đối tượng [X], cần đến [địa điểm/địa chỉ Y] để xử lý thủ tục, mang theo [giấy tờ/mẫu đơn/tờ khai Z] và thực hiện theo trình tự trên."
++ Đảm bảo thông tin chính xác, dựa trên bản phác thảo và kết quả tìm kiếm. 
++ Câu tóm tắt phải súc tích, dễ hiểu, không lan man. 
+
+3. Phần **Căn cứ pháp lý**: 
+- Phần này liệt kê các văn bản pháp lý làm căn cứ cho câu trả lời. 
+- Phần này không bắt buộc, chỉ đưa ra khi tìm thấy thông tin trong kết quả tìm kiếm.  Trình bày trong mục riêng với tiêu đề "Căn cứ pháp lý". 
+- Yêu cầu: 
++ Chỉ liệt kê tên văn bản pháp lý nếu TÌM THẤY trong kết quả tìm kiếm (ví dụ: "Nghị định 01/2021/NĐ-CP", "Thông tư 02/2020/TT-BCA").  
++ Nếu không tìm thấy thông tin về căn cứ pháp lý trong kết quả tìm kiếm, BỎ QUA hoàn toàn phần này (không được hiển thị mục "Căn cứ pháp lý").
++ TUYỆT ĐỐI KHÔNG được bịa đặt tên văn bản pháp lý.
 
 ## Một số yêu cầu: 
 
@@ -369,7 +386,7 @@ Ví dụ:
 
 ### Định dạng đầu ra: 
 
-- Hãy bắt đầu viết câu trả lời luôn, bắt đầu bằng "Trả lời:". 
+- Hãy bắt đầu viết câu trả lời luôn, bắt đầu bằng "Trình tự thực hiện:".  
 
 """
 
@@ -400,14 +417,26 @@ Bạn là **Chuyên gia đánh giá bản phác thảo câu trả lời - review
 
 ## Hướng dẫn viết đánh giá và nhận xét: 
 
-**Bước 1:** Hãy xem xét từng nội dung chính trong bản phác thảo và đánh giá: 
+**Bước 1:** Hãy xem xét từng phần trong bản phác thảo và đánh giá: 
 
-- Với từng nội dung chính, đánh giá qua 3 tiêu chí: 
-1. can_be_proven_by_search_results: các luận điểm, thông tin đưa ra trong nội dung đó có chứng minh được từ kết quả tìm kiếm được cung cấp không? 
-2. accurate: có chính xác không? có đúng với câu hỏi của người dùng không? 
-3. is_consistent: có nhất quán với các nội dung khác không? Nếu 2 nội dung mâu thuẫn nhau thì phải điều chỉnh lại. 
+Bản phác thảo gồm 3 phần: **A. Trình tự thực hiện**, **B. Thông tin tóm tắt**, **C. Căn cứ pháp lý**. 
 
-- Ghi chú: Không cần viết lại nội dung chính, tránh mất thời gian.
+- Với phần **A. Trình tự thực hiện**, đánh giá qua các tiêu chí: 
+1. can_be_proven_by_search_results: các bước, thông tin đưa ra có chứng minh được từ kết quả tìm kiếm không? 
+2.  accurate: có chính xác không? có đúng với câu hỏi của người dùng không? 
+3. is_complete: có đầy đủ các bước cần thiết không? Có thiếu bước quan trọng nào không? 
+4. is_consistent: các bước có nhất quán, logic không?  Có mâu thuẫn giữa các bước không? 
+
+- Với phần **B. Thông tin tóm tắt**, đánh giá qua các tiêu chí:
+1. can_be_proven_by_search_results: thông tin về đối tượng, địa điểm, giấy tờ có chứng minh được từ kết quả tìm kiếm không? 
+2. accurate: có chính xác không? 
+3. is_complete: có đầy đủ 3 mục (đối tượng, địa điểm, giấy tờ) không? 
+
+- Với phần **C.  Căn cứ pháp lý** (nếu có), đánh giá qua tiêu chí:
+1.  can_be_proven_by_search_results: tên văn bản pháp lý có TÌM THẤY trong kết quả tìm kiếm không?  TUYỆT ĐỐI KHÔNG chấp nhận văn bản bịa đặt. 
+2.  Nếu không tìm thấy căn cứ pháp lý trong kết quả tìm kiếm, phần này phải ghi rõ "Không tìm thấy thông tin về căn cứ pháp lý" hoặc bỏ qua hoàn toàn. 
+
+- Ghi chú: Không cần viết lại nội dung, chỉ đánh giá và đưa ra nhận xét. 
 
 ---
 

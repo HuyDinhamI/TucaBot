@@ -114,11 +114,11 @@ async def get_chunks_status(
 async def add_chunks(
     chunks: List[CreateChunkRequest] = Body(
         ...,
-        description="List of chunks to create. Maximum number of chunks per request is 20",
+        description="List of chunks to create.Maximum number of chunks per request is 20",
     ),
 ):
     """
-    Tạo/Embedding 1 hoặc nhiều chunks theo tenant id. Lưu ý: Đầu vào được phép tối đa 20 phần tử.
+    Tạo/Embedding 1 hoặc nhiều chunks theo tenant id.Lưu ý: Đầu vào được phép tối đa 20 phần tử.
     """
     try:
         if len(chunks) > 20:
@@ -134,17 +134,15 @@ async def add_chunks(
         # Convert to DB models
         db_chunks = [c.to_db_model(embedding_status=True) for c in chunks]
         
-        # Log thông tin chunks trước khi add
-        for idx, chunk in enumerate(db_chunks):
-            print(f"\nChunk {idx + 1}:")
-            print(f"  ID: {chunk.id}")
-            print(f"  Title: {chunk.title}")
-            print(f"  Content length: {len(chunk.content)}")
-            print(f"  Document ID: {chunk.document_id}")
-            print(f"  App IDs: {chunk.app_ids}")
-            print(f"  Chunk index: {chunk.chunk_index}")
-            print(f"  Char count: {chunk.char_count} (type: {type(chunk.char_count).__name__})")
-            print(f"  Content hash: {chunk.content_hash}")
+        # # Log thông tin chunks trước khi add
+        # for idx, chunk in enumerate(db_chunks):
+        #     print(f"\nChunk {idx + 1}:")
+        #     print(f"  ID: {chunk.id}")
+        #     print(f"  Title: {chunk.title}")
+        #     print(f"  Content length: {len(chunk.content)}")
+        #     print(f"  Document ID: {chunk.document_id}")
+        #     print(f"  App IDs: {chunk.app_ids}")
+        #     print(f"  Chunk index: {chunk.chunk_index}")
         
         res = await chunk_manager.add_chunks(chunks=db_chunks)
         
@@ -180,11 +178,11 @@ async def add_chunks(
 async def update_chunks(
     chunks: List[UpdateChunkRequest] = Body(
         ...,
-        description="List of chunks to create. Maximum number of chunks per request is 20",
+        description="List of chunks to create.Maximum number of chunks per request is 20",
     ),
 ):
     """
-    Cập nhật 1 hoặc nhiều chunk của tenant id. Lưu ý: Đầu vào được phép tối đa 20 phần tử
+    Cập nhật 1 hoặc nhiều chunk của tenant id.Lưu ý: Đầu vào được phép tối đa 20 phần tử
     """
     try:
         if len(chunks) > 20:

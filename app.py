@@ -195,14 +195,17 @@ if "config" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-    
+
+
 async def process_events():
     start_time = time.time()
     start_think: bool = False
     
     async for event in graph.astream_events(inputs, config=st.session_state.config, version="v2"):
         # Log all events safely
-        # safe_log_event(event, st.session_state.session_id)
+        safe_log_event(event, st.session_state.session_id)
+        # with open('events.txt', 'a', encoding='utf-8') as f:
+        #     f.write(json.dumps(event, ensure_ascii=False) + '\n')
         
         if event["event"] == "on_custom_event":
             safe_log_event(event, st.session_state.session_id)
@@ -247,6 +250,12 @@ async def process_events():
                     start_think = False
 
                 if event["metadata"]. get("langgraph_node") == "ask_user":
+                    # Trích xuất nội dung từ cấu trúc mới
+                    content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
+                    if content:
+                        yield content
+
+                if event["metadata"]. get("langgraph_node") == "gather_user_information_agent":
                     # Trích xuất nội dung từ cấu trúc mới
                     content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
                     if content:

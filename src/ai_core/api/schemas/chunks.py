@@ -78,7 +78,7 @@ class UpdateStatusRequest(BaseModel):
     )
     action: Status = Field(
         description=(
-            "Action to be performed on the document chunk. Possible values are:\n"
+            "Action to be performed on the document chunk.Possible values are:\n"
             "- UNPUBLISHED (0): Set the document to unpublished status.\n"
             "- PUBLISHED (1): Set the document to published status.\n"
             "- DISABLED (2): Disable the document, making it inaccessible.\n"

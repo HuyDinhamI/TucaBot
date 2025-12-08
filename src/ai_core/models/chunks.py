@@ -77,14 +77,6 @@ class DocumentChunk(BaseModel):
         combined_content = str(title) + "\n" + str(content)
         return hashlib.md5(combined_content.encode()).hexdigest()
     
-    @computed_field
-    @property
-    def char_count(self) -> int:
-        """Dynamically computed char_count based on title and content"""
-        title = self.title or ""
-        content = self.content or ""
-        combined_content = str(title) + "\n" + str(content)
-        return len(combined_content)
     class Config:
         validate_assignment = True
     
@@ -106,8 +98,6 @@ class DocumentChunk(BaseModel):
             "chunk_index": int(self.chunk_index),  # Ensure integer
             "title": self.title,
             "content": self.content,
-            "content_hash": self.content_hash,
-            "char_count": int(self.char_count),  # Ensure integer from computed field
             "hit_count": int(self.hit_count),  # Ensure integer
             "enabled": bool(self.enabled),  # Ensure boolean
             "embedding_status": bool(self.embedding_status),  # Ensure boolean

@@ -1,6 +1,7 @@
 from typing import Dict, Optional, Any, List, Text, Iterable, Literal, Tuple
 import logging
 import uuid
+import json
 from elasticsearch import (
     AsyncElasticsearch,
     Elasticsearch,
@@ -59,7 +60,7 @@ class AVAElasticsearchStore(ElasticsearchStore):
                 logger.info(f"Sử dụng ResilientElasticsearchClient cho index {index_name}")
             except Exception as e:
                 # Nếu có lỗi khi lấy client từ factory, log lỗi và sử dụng cách kết nối cũ
-                logger.error(f"Không thể sử dụng ResilientElasticsearchClient: {str(e)}. Sử dụng kết nối trực tiếp.")
+                logger.error(f"Không thể sử dụng ResilientElasticsearchClient: {str(e)}.Sử dụng kết nối trực tiếp.")
                 
         self.params = {
             "index_name": index_name,
@@ -83,12 +84,16 @@ class AVAElasticsearchStore(ElasticsearchStore):
             "id": {"type": "keyword"},
             "document_id": {"type": "keyword"},
             "app_ids": {"type": "keyword"},
-            "char_count": {"type": "integer"},
             "chunk_index": {"type": "integer"},
             "hit_count": {"type": "integer"},
             "enabled": {"type": "boolean"},
             "embedding_status": {"type": "boolean"},
             "published": {"type": "boolean"},
+            "document_metadata": {
+                "type": "object",
+                "enabled": True,
+                "dynamic": True  # Cho phép Elasticsearch tự động detect các field bên trong
+            }
         }
 
     def get_index_info(self) -> Dict[Text, Any]:
@@ -156,15 +161,15 @@ class AVAElasticsearchStore(ElasticsearchStore):
         """Add documents to the Elasticsearch index.
 
         :param texts: List of text documents.
-        :param metadata: Optional list of document metadata. Must be of same length as
+        :param metadata: Optional list of document metadata.Must be of same length as
             texts.
-        :param vectors: Optional list of embedding vectors. Must be of same length as
+        :param vectors: Optional list of embedding vectors.Must be of same length as
             texts.
-        :param ids: Optional list of ID strings. Must be of same length as texts.
+        :param ids: Optional list of ID strings.Must be of same length as texts.
         :param refresh_indices: Whether to refresh the index after deleting documents.
             Defaults to True.
         :param create_index_if_not_exists: Whether to create the index if it does not
-            exist. Defaults to True.
+            exist.Defaults to True.
         :param bulk_kwargs: Arguments to pass to the bulk function when indexing
             (for example chunk_size).
 

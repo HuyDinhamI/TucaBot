@@ -48,7 +48,7 @@ class Qwen15V1Embedding(Embeddings):
                 self.url + "/embed",
                 headers = {
                     "Content-Type": "application/json",
-                    "api-key": self.api_key,
+                    "x-api-key": self.api_key,
                     "model": self.model_name,
                 },
                 json = {
@@ -57,7 +57,7 @@ class Qwen15V1Embedding(Embeddings):
                     "inputs": texts[i:i+self.batch_size],
                     "normalize": True
                 },
-                timeout = 10
+                timeout = 120
             )
             embeddings.extend(responses.json())
         

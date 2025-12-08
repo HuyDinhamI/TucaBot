@@ -4,8 +4,10 @@ import time
 import requests
 import logging
 import filetype
+import httpx
 from uuid import uuid4
 from pydantic import BaseModel
+from urllib.parse import urlparse
 from typing import Optional, Union, Any, Type, NoReturn, Tuple, Sequence, List, Mapping
 from langchain_google_genai._image_utils import ImageBytesLoader
 from langchain_google_genai._common import GoogleGenerativeAIError
@@ -23,6 +25,8 @@ from langchain_core.callbacks import adispatch_custom_event
 from langgraph.prebuilt.tool_node import _get_state_args
 from google import genai
 from google.genai import types
+from google.genai.types import GenerateContentResponse, HttpOptions
+from openai.lib._parsing._completions import type_to_response_format_param
 
 from src.settings import settings
 from src.utils.json_parser import parse_structured_response
@@ -44,13 +48,25 @@ class ChatGoogleGenerativeAI:
         self.kwargs = kwargs
 
     def init_client(self, **kwargs):
+        base_url = kwargs.get("base_url")
+        timeout = kwargs.get("timeout")
+        headers = {
+            "X-Provider-Code": "gemini",
+            "X-API-Key": kwargs.get("api_key")
+        }
+
         self.client = genai.Client(
             api_key=kwargs.get("api_key"),
+            http_options=HttpOptions(
+                base_url=base_url,
+                headers=headers if base_url else None,
+                timeout=timeout*1000 if timeout else None
+            )
         )
 
     def with_structured_output(
         self, schema: Type[BaseModel]
-    ) -> Optional[Type[BaseModel]]:
+    ) -> Optional[Union[Type[BaseModel], str]]:
         """Returns new lightweight wrapper"""
         try:
             return StructuredChatGoogleGenerativeAIWrapper(
@@ -59,125 +75,115 @@ class ChatGoogleGenerativeAI:
             )
         except Exception as e:
             logger.error("Error creating structured output wrapper: %s", e, exc_info=True)
-            return None
+            raise
     
     async def ainvoke(
         self,
         messages: Union[str, list[BaseMessage | dict]],
         tools: Optional[list] = None,
         temperature: Optional[float] = 0.0,
-        enable_thinking: bool = False,
         config: Optional[RunnableConfig] = None,
-        dispatch_event: bool = True,
+        dispatch_answer_event: bool = True,
+        dispatch_think_event: bool = True,
+        stream: bool = True,
         **kwargs: Any
-    ) -> AIMessage:
-        # await adispatch_custom_event(
-        #     name="on_chat_model_start",
-        #     data={"input": {"messages": [messages]}},
-        #     config=config
-        # )
+    ) -> Union[str, AIMessage]:
+        st = time.time()
+        logger.info(f"LLM start: {self.model}")
+
+        ttft: float = None # time to first token
+        thought: list[str] = []
+        answer: list[str] = []
+        tool_calls: list[dict] = []
+
+        kwargs = self.kwargs | kwargs
+
+        messages, system_instruction = self._convert_messages(messages)
+
+        # Format messages to Gemini format
+        if self.model == "gemini-2.5-pro":
+            thinking_config=types.ThinkingConfig(include_thoughts=True)
+        else:
+            thinking_config=types.ThinkingConfig(thinking_budget=0)
+
+        gen_config = {
+            "temperature": temperature,
+            "max_output_tokens": kwargs.get("max_tokens"),
+            "thinking_config": thinking_config,  # Disabled due to JSON parsing bug
+            "system_instruction": system_instruction,
+        }
+        if kwargs.get("schema"):
+            gen_config["response_mime_type"] = "application/json"
+            gen_config["response_schema"] = kwargs.get("schema")
+        if tools:
+            tools = self.to_json_tools(tools)
+            gen_config["tools"] = [{"function_declarations": tools}]
+
+        gen_config = types.GenerateContentConfig(**gen_config)
 
         try:
-            st = time.time()
-            logger.info(f"LLM start: {self.model}")
+            if stream:
+                for chunk in self.client.models.generate_content_stream(
+                    model=self.model,
+                    contents=messages,
+                    config=gen_config
+                ):
+                    if ttft is None:
+                        ttft = time.time() - st
+                        logger.info(f"First token latency: {ttft:.4f}s")
+                    
+                    await self._process_chunk(
+                        chunk,
+                        thought,
+                        answer,
+                        tool_calls,
+                        config=config,
+                        dispatch_answer_event=not kwargs.get("schema") and dispatch_answer_event,
+                        dispatch_think_event=dispatch_think_event,
+                        **kwargs
+                    )
 
-            ttft: float = None 
-            thought: list[str] = []
-            answer: list[str] = []
-            tool_calls: list[dict] = []
+                et = time.time()
+                ttlt = et - st  # time to last token
+                logger.info(f"LLM end: {ttlt:.4f}s")
 
-            kwargs = self.kwargs | kwargs
-
-            messages, system_instruction = self._convert_messages(messages)
-
-            # Format messages to Gemini format
-            if self.model == "gemini-2.5-pro":
-                thinking_config=types.ThinkingConfig(include_thoughts=True)
-            else:
-                thinking_config=types.ThinkingConfig(thinking_budget=0)
-
-            gen_config = {
-                "temperature": temperature,
-                "max_output_tokens": kwargs.get("max_tokens"),
-                "thinking_config": thinking_config,  # Disabled due to JSON parsing bug
-                "system_instruction": system_instruction,
-            }
-            if kwargs.get("schema"):
-                gen_config["response_mime_type"] = "application/json"
-                # Clean schema before passing to Gemini
-                schema = kwargs.get("schema")
-                if hasattr(schema, 'model_json_schema'):
-                    raw_schema = schema.model_json_schema()
-                    cleaned_schema = self._clean_schema_recursive(raw_schema)
-                    gen_config["response_schema"] = cleaned_schema
-                else:
-                    gen_config["response_schema"] = schema
-            if tools:
-                tools = self.to_json_tools(tools)
-                gen_config["tools"] = [{"function_declarations": tools}]
-
-            gen_config = types.GenerateContentConfig(**gen_config)
-
-            # async for chunk in await self.client.aio.models.generate_content_stream(
-            #     model=self.model,
-            #     contents=messages,
-            #     config=gen_config
-            # ):
-            for chunk in self.client.models.generate_content_stream(
-                model=self.model,
-                contents=messages,
-                config=gen_config
-            ):
-                # Kiểm tra first token
-                if ttft is None:
-                    ttft = time.time() - st
-                    logger.info(f"First token latency: {ttft:.2f}s")
+                thought: str = "".join(thought)
+                answer: str = "".join(answer)
                 
-                await self._process_chunk(
-                    chunk,
-                    thought,
-                    answer,
-                    tool_calls,
-                    config=config,
-                    dispatch_event=not kwargs.get("schema") and dispatch_event,
-                    **kwargs
+                if tool_calls:
+                    tool_calls = self._format_tool_calls(tool_calls)
+
+                elif thought:
+                    tool_calls = self._extract_tool_calls(thought)
+
+                return AIMessage(
+                    content=answer,
+                    thought=thought,
+                    tool_calls=tool_calls,
+                    metadata=dict(
+                        model_name=self.model,
+                        ttft=ttft,
+                        ttlt=ttlt
+                    )
                 )
-
-            et = time.time()
-            ttlt = et - st  # time to last token
-            logger.info(f"LLM end: {ttlt:.2f}s")
-
-            thought: str = "".join(thought)
-            answer: str = "".join(answer)
-            
-            if tool_calls:
-                tool_calls = self._format_tool_calls(tool_calls)
-
-            elif thought:
-                tool_calls = self._extract_tool_calls(thought)
-
-            return AIMessage(
-                content=answer,
-                thought=thought,
-                tool_calls=tool_calls,
-                metadata=dict(
-                    model_name=self.model,
-                    ttft=ttft,
-                    ttlt=ttlt
+            else:
+                response: GenerateContentResponse = self.client.models.generate_content(
+                    model=self.model,
+                    contents=messages,
+                    config=gen_config
                 )
-            )
+                logger.info(f"LLM end: {time.time() - st:.2f}s")
+                try:
+                    content = response.candidates[0].content.parts[0].text
+                except Exception as e:
+                    content = ""
+                return AIMessage(
+                    content=content
+                )
         
         except Exception as e:
             logger.error("Error in ainvoke: %s", e, exc_info=True)
-            return AIMessage(
-                content="",
-                thought="",
-                tool_calls=[],
-                metadata=dict(
-                    model_name=self.model,
-                    error_message=str(e)
-                )
-            )
+            raise
     
     async def _process_chunk(
         self,
@@ -187,7 +193,8 @@ class ChatGoogleGenerativeAI:
         tool_calls: list[dict],
         terminate_trigger: Optional[str] = None,
         config: Optional[RunnableConfig] = None,
-        dispatch_event: bool = True,
+        dispatch_answer_event: bool = True,
+        dispatch_think_event: bool = True,
         **kwargs
     ):
         if (
@@ -222,11 +229,11 @@ class ChatGoogleGenerativeAI:
             if part.text:
                 text = part.text or ""
                 if part.thought:
-                    if dispatch_event:
+                    if dispatch_think_event:
                         await adispatch_custom_event(
-                            name="on_think_event",
+                            name="on_think_stream",
                             data={
-                                "title": "Suy luận",
+                                "title": kwargs.get("event_title") or "Suy luận",
                                 "chunk": {
                                     "content": text
                                 }
@@ -236,9 +243,9 @@ class ChatGoogleGenerativeAI:
                     thought.append(text)
 
                 else:
-                    if dispatch_event:
+                    if dispatch_answer_event:
                         await adispatch_custom_event(
-                            name=kwargs.get("event_name") or "on_answer_event",
+                            name=kwargs.get("event_name") or "on_answer_stream",
                             data={
                                 "title": kwargs.get("event_title") or "",
                                 "chunk": {
@@ -371,63 +378,28 @@ class ChatGoogleGenerativeAI:
                 )
         return gemini_contents, system_instruction
     
-    @staticmethod
-    def clean_schema(prop: dict) -> dict:
-        """Loại bỏ các key không được Gemini hỗ trợ."""
-        allowed_keys = {"type", "description", "enum", "items", "properties"}
-        return {k: v for k, v in prop.items() if k in allowed_keys}
-    
-    def _clean_schema_recursive(self, schema: dict) -> dict:
-        """Clean schema recursively, removing unsupported keys like additionalProperties."""
-        if not isinstance(schema, dict):
-            return schema
-            
-        # Remove unsupported keys
-        unsupported_keys = ["additionalProperties", "$defs", "title"]
-        cleaned = {k: v for k, v in schema.items() if k not in unsupported_keys}
-        
-        # Recursively clean nested structures
-        if "properties" in cleaned:
-            cleaned["properties"] = {
-                k: self._clean_schema_recursive(v) for k, v in cleaned["properties"].items()
-            }
-        
-        if "items" in cleaned:
-            cleaned["items"] = self._clean_schema_recursive(cleaned["items"])
-            
-        if "anyOf" in cleaned:
-            cleaned["anyOf"] = [self._clean_schema_recursive(item) for item in cleaned["anyOf"]]
-            
-        if "allOf" in cleaned:
-            cleaned["allOf"] = [self._clean_schema_recursive(item) for item in cleaned["allOf"]]
-            
-        return cleaned
-
     def to_json_tools(self, tools: list[BaseTool | dict]):
+        """Convert tools to the json format"""
         converted_tools = []
         for tool in tools:
             if isinstance(tool, BaseTool):
                 state_args: dict = _get_state_args(tool)
-                clean_props = {}
-                for arg, spec in tool.args.items():
-                    if arg in state_args:
-                        continue
-                    clean_props[arg] = ChatGoogleGenerativeAI.clean_schema(spec)
                 converted_tools.append({
                     "name": tool.name,
                     "description": tool.description,
                     "parameters": {
                         "type": "object",
-                        "properties": clean_props
+                        "properties": {
+                            arg: v for arg, v in tool.args.items() if arg not in state_args
+                        },
                     }
                 })
             elif isinstance(tool, dict) and tool.get("function"):
-                converted_tools.append(tool["function"])
+                converted_tools.append(tool.get("function", {}))
             elif isinstance(tool, dict) and tool.get("name"):
                 converted_tools.append(tool)
+
         return converted_tools
-
-
 
 class StructuredChatGoogleGenerativeAIWrapper:
     def __init__(
@@ -435,26 +407,35 @@ class StructuredChatGoogleGenerativeAIWrapper:
     ) -> NoReturn:
         self.client = client
         self.schema = schema
+        self.json_schema = type_to_response_format_param(schema)
     
     async def ainvoke(
-        self, messages: list[BaseMessage], **kwargs
-    ) -> Type[BaseModel]:
-        try:
+        self,
+        messages: list[BaseMessage],
+        max_retries: int = 2,
+        **kwargs
+    ) -> Union[str, Type[BaseModel]]:
+        new_messages = messages.copy()
+        new_messages.append(AIMessage(f"JSON schema: \n```\n{self.json_schema}\n``` \nI will strictly respond with a JSON object including keys corresponding to the properties defined in the JSON schema, using double quotes for both keys and string values."))
+        
+        for num_retry in range(max_retries):
             response = await self.client.ainvoke(
-                messages=messages,
+                messages=new_messages,
                 schema=self.schema,
                 **kwargs
             )
+            
+            if isinstance(response, Exception):
+                raise response
+            
             parsed_result, error_msg = parse_structured_response(response.content, self.schema)
             if parsed_result is not None:
                 return parsed_result
+            elif num_retry == max_retries - 1:
+                logger.warning(f"Structured parsing failed after {max_retries} attempts: {error_msg}")
+                return error_msg
             else:
-                logger.warning(f"Structured parsing failed: {error_msg}")
-                return self.schema()
-                
-        except Exception as e:
-            logger.error("Error in ainvoke with structured output: %s", e, exc_info=True)
-            return self.schema()
+                new_messages.append(AIMessage(content=error_msg))
 
 def _convert_to_parts(
     raw_content: Union[str, Sequence[Union[str, dict]]],
@@ -505,27 +486,47 @@ def _convert_to_parts(
                         media_part.video_metadata = metadata
                     parts.append(media_part)
 
-                # elif part.get("type") == "image":
-                #     file_id = part.get("file", {}).get("file_id")
-                #     file_bytes = get_file_bytes(file_id)
-                #     if file_bytes:
-                #         mime_type = None
-                #         try:
-                #             kind = filetype.guess(file_bytes)
-                #             if kind:
-                #                 mime_type = kind.mime
-                #         except Exception as e:
-                #             logger.error(f"Error guessing image type: {e}", exc_info=True)
+                elif (
+                    part.get("type") == "image" and
+                    isinstance(part.get("file"), str)
+                ):
+                    file_bytes = download_image_to_bytes(part.get("file"))
+                    if file_bytes:
+                        mime_type = None
+                        try:
+                            kind = filetype.guess(file_bytes)
+                            if kind:
+                                mime_type = kind.mime
+                        except Exception as e:
+                            logger.error(f"Error guessing image type: {e}", exc_info=True)
 
-                #         inline_data = {"data": file_bytes, "mime_type": mime_type}
-                #         parts.append(types.Part(inline_data=inline_data))
+                        inline_data = {"data": file_bytes, "mime_type": mime_type}
+                        parts.append(types.Part(inline_data=inline_data))
 
-                # elif part.get("type") in ["pdf"]:
-                #     file_id = part.get("file", {}).get("file_id")
-                #     file_bytes = get_file_bytes(file_id)
-                #     if file_bytes:
-                #         inline_data = {"data": file_bytes, "mime_type": "application/pdf"}
-                #         parts.append(types.Part(inline_data=inline_data))
+                elif (
+                    part.get("type") == "image" and
+                    isinstance(part.get("file"), dict)
+                ):
+                    file_id = part.get("file", {}).get("file_id")
+                    file_bytes = get_file_bytes(file_id)
+                    if file_bytes:
+                        mime_type = None
+                        try:
+                            kind = filetype.guess(file_bytes)
+                            if kind:
+                                mime_type = kind.mime
+                        except Exception as e:
+                            logger.error(f"Error guessing image type: {e}", exc_info=True)
+
+                        inline_data = {"data": file_bytes, "mime_type": mime_type}
+                        parts.append(types.Part(inline_data=inline_data))
+
+                elif part.get("type") in ["pdf"]:
+                    file_id = part.get("file", {}).get("file_id")
+                    file_bytes = get_file_bytes(file_id)
+                    if file_bytes:
+                        inline_data = {"data": file_bytes, "mime_type": "application/pdf"}
+                        parts.append(types.Part(inline_data=inline_data))
 
                 else:
                     raise ValueError(
@@ -549,18 +550,18 @@ def _convert_to_parts(
 def _is_openai_parts_format(part: dict) -> bool:
     return "type" in part
 
-# def get_file_bytes(
-#     file_id: str,
-# ) -> bytes:
-#     """Get file bytes from MinIO API."""
-#     # return convert_image_to_bytes("misa.jpg", format="JPEG")
-#     try:
-#         response = requests.get(f"{get_bytes_api}/{type_doc}/{file_id}")
-#         response.raise_for_status()
-#         return response.content
-#     except requests.RequestException as e:
-#         logger.error(f"Error fetching file bytes: {e}", exc_info=True)
-#         return b""
+def get_file_bytes(
+    file_id: str,
+) -> bytes:
+    """Get file bytes from MinIO API."""
+    # return convert_image_to_bytes("misa.jpg", format="JPEG")
+    try:
+        response = requests.get(f"{get_bytes_api}/{type_doc}/{file_id}")
+        response.raise_for_status()
+        return response.content
+    except requests.RequestException as e:
+        logger.error(f"Error fetching file bytes: {e}", exc_info=True)
+        return b""
     
 import base64
 from pathlib import Path
@@ -626,4 +627,41 @@ def convert_image_to_bytes(
         raise ValueError(f"Unsupported image source type: {type(image_source)}")
         
     except Exception as e:
+        return b""
+
+def download_image_to_bytes(image_url: str) -> bytes:
+    """
+    Download image từ URL public và trả về dưới dạng bytes
+    
+    Args:
+        image_url (str): URL của ảnh cần download
+        
+    Returns:
+        bytes: Raw bytes của ảnh, hoặc empty bytes nếu có lỗi
+    """
+    try:
+        # Validate URL
+        parsed_url = urlparse(image_url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            logger.error(f"URL không hợp lệ: {image_url}")
+            return b""
+        
+        # Download image
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        response = requests.get(image_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        # Get image bytes
+        image_bytes = response.content
+        
+        logger.info(f"Đã download ảnh thành công từ URL: {image_url}")
+        return image_bytes
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Lỗi khi download ảnh từ URL {image_url}: {str(e)}")
+        return b""
+    except Exception as e:
+        logger.error(f"Lỗi không xác định khi xử lý ảnh từ URL {image_url}: {str(e)}")
         return b""
