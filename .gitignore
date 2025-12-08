@@ -160,6 +160,5 @@ maudon
 debug_logs
 event.jsonl
 
-/settings
 *.json
 *.jsonl

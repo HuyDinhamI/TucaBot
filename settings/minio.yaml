@@ -1,0 +1,20 @@
+connection:
+  endpoint: "103.90.224.126:9000"
+  access_key: "admin"
+  secret_key: "Mavap123"
+  secure: false
+
+buckets:
+  # Default bucket khi không detect được
+  default: "dataset"
+  
+  # Danh sách các bucket hợp lệ cho auto-detection
+  # Dùng cho agent mẫu đơn
+  valid_buckets:
+    - "dataset"
+    - "documents"
+    - "default"
+    - "maudon"
+  
+  # Bucket cho các loại file khác nhau
+  filled_documents: "filled_documents"
