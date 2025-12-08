@@ -379,27 +379,115 @@ class ChatGoogleGenerativeAI:
         return gemini_contents, system_instruction
     
     def to_json_tools(self, tools: list[BaseTool | dict]):
-        """Convert tools to the json format"""
+        """Convert tools to the json format compatible with Gemini API"""
         converted_tools = []
         for tool in tools:
             if isinstance(tool, BaseTool):
                 state_args: dict = _get_state_args(tool)
-                converted_tools.append({
+                
+                # Clean and convert tool arguments schema
+                properties = {}
+                required_fields = []
+                
+                for arg_name, arg_schema in tool.args.items():
+                    if arg_name in state_args:
+                        continue
+                    
+                    # Clean the schema to be Gemini-compatible
+                    clean_schema = self._clean_tool_schema(arg_schema)
+                    if clean_schema:
+                        properties[arg_name] = clean_schema
+                        
+                        # Check if field is required (no default value)
+                        if not hasattr(arg_schema, 'default') and not getattr(arg_schema, 'default', None):
+                            required_fields.append(arg_name)
+                
+                tool_def = {
                     "name": tool.name,
                     "description": tool.description,
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            arg: v for arg, v in tool.args.items() if arg not in state_args
-                        },
+                        "properties": properties
                     }
-                })
+                }
+                
+                # Only add required if there are required fields
+                if required_fields:
+                    tool_def["parameters"]["required"] = required_fields
+                    
+                converted_tools.append(tool_def)
+                
             elif isinstance(tool, dict) and tool.get("function"):
                 converted_tools.append(tool.get("function", {}))
             elif isinstance(tool, dict) and tool.get("name"):
                 converted_tools.append(tool)
 
         return converted_tools
+    
+    def _clean_tool_schema(self, schema: dict) -> dict:
+        """Clean tool schema to be compatible with Gemini API"""
+        if not isinstance(schema, dict):
+            return {}
+        
+        # Create a clean schema without Gemini-incompatible fields
+        clean_schema = {}
+        
+        # Handle type
+        schema_type = schema.get('type')
+        if schema_type:
+            clean_schema['type'] = schema_type
+        elif 'anyOf' in schema and len(schema['anyOf']) > 0:
+            # Handle Union types - take the first non-null type
+            for option in schema['anyOf']:
+                if isinstance(option, dict) and option.get('type') != 'null':
+                    clean_schema['type'] = option.get('type', 'string')
+                    break
+            if 'type' not in clean_schema:
+                clean_schema['type'] = 'string'
+        else:
+            clean_schema['type'] = 'string'  # default fallback
+        
+        # Handle description
+        if 'description' in schema:
+            clean_schema['description'] = schema['description']
+        
+        # Handle array items - ALWAYS ensure items field exists for arrays
+        if clean_schema.get('type') == 'array':
+            if 'items' in schema:
+                items_schema = schema['items']
+                if isinstance(items_schema, dict):
+                    clean_items = self._clean_tool_schema(items_schema)
+                    if clean_items:
+                        clean_schema['items'] = clean_items
+                    else:
+                        clean_schema['items'] = {'type': 'string'}
+                else:
+                    clean_schema['items'] = {'type': 'string'}
+            else:
+                # If no items schema provided, default to string array
+                clean_schema['items'] = {'type': 'string'}
+        
+        # Handle object properties  
+        if clean_schema.get('type') == 'object' and 'properties' in schema:
+            clean_properties = {}
+            for prop_name, prop_schema in schema['properties'].items():
+                clean_prop = self._clean_tool_schema(prop_schema)
+                if clean_prop:
+                    clean_properties[prop_name] = clean_prop
+            if clean_properties:
+                clean_schema['properties'] = clean_properties
+        
+        # Handle enum values
+        if 'enum' in schema:
+            clean_schema['enum'] = schema['enum']
+        
+        # Explicitly exclude fields that Gemini doesn't support
+        excluded_fields = {
+            'additional_properties', 'additionalProperties', 
+            'default', 'examples', 'title', '$ref', 'allOf', 'anyOf', 'oneOf'
+        }
+        
+        return clean_schema
 
 class StructuredChatGoogleGenerativeAIWrapper:
     def __init__(
@@ -530,7 +618,7 @@ def _convert_to_parts(
 
                 else:
                     raise ValueError(
-                        f"Unrecognized message part type: {part['type']}. Only text, "
+                        f"Unrecognized message part type: {part['type']}.Only text, "
                         f"image_url, and media types are supported."
                     )
             else:
