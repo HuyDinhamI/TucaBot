@@ -156,11 +156,11 @@ def parse_structured_response(content: str, schema: Type[T]) -> tuple[Optional[T
                     errors.append(f"Aggressive cleaning: {final_error}")
                     
                     # Compile all errors
-                    error_msg = f"All parsing attempts failed. Errors: {'; '.join(errors)}. Original content: {content[:100]}..."
+                    error_msg = f"All parsing attempts failed. Errors: {'; '.join(errors)}. Original content: {content}..."
                     return None, error_msg
     
     except Exception as e:
-        error_msg = f"Unexpected error in parse_structured_response: {e}. Content: {content[:100]}..."
+        error_msg = f"Unexpected error in parse_structured_response: {e}. Content: {content}..."
         return None, error_msg
 
 def _detect_single_quote_style(json_str: str) -> bool:

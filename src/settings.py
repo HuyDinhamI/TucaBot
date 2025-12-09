@@ -76,6 +76,9 @@ class GlobalConfig(BaseSettings):
         "settings/minio.yaml"
     )
     
+    LANGFUSE_CONF: Dict[str, Any] = ConfigReaderInstance.yaml.read_config_from_file(
+        "settings/langfuse.yaml"
+    )
     class Config:
         """Loads the dotenv file."""
 

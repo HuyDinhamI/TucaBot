@@ -1,0 +1,8 @@
+secret_key: sk-lf-d387054a-2c2a-450f-a2f2-95cff9da31f8
+public_key: pk-lf-575187ad-131d-469d-aff1-4d6658f8c331
+host: http://103.90.224.126:3000
+trace_name: MAVAP-Bot
+enabled: True
+version: 1.0.0
+
+

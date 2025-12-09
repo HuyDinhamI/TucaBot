@@ -10,7 +10,7 @@ import os
 from uuid import uuid4
 from pymongo import MongoClient
 from typing import AsyncGenerator, Any, Dict
-# from langfuse.callback import CallbackHandler
+from langfuse.callback import CallbackHandler
 from datetime import datetime, timezone, timedelta
 
 # Tắt LangFuse error logging
@@ -111,6 +111,17 @@ def init():
     session_id = str(uuid4())
     st.session_state.session_id = session_id
     
+    langfuse_handler = CallbackHandler(
+        secret_key=settings.LANGFUSE_CONF["secret_key"],    
+        public_key=settings.LANGFUSE_CONF["public_key"],
+        host=settings.LANGFUSE_CONF["host"],
+        # trace_name=settings.LANGFUSE_CONF["trace_name"],
+        trace_name="CGKT-Network",
+        enabled=settings.LANGFUSE_CONF["enabled"],
+        session_id=session_id,
+        version=settings.LANGFUSE_CONF["version"]
+    )
+
     # Cấu hình mặc định với agent_id cố định
     agent_id = "88886666-9999-4666-aaaa-88889999ffff"
     data = {
@@ -120,7 +131,7 @@ def init():
         "current_time": datetime.now(timezone(timedelta(hours=7))).strftime("%d/%m/%Y")
     }
     
-    st.session_state.config = {"configurable": data, "recursion_limit": 100}
+    st.session_state.config = {"configurable": data, "recursion_limit": 100, "callbacks": [langfuse_handler]}
 
 st.title("Hỏi đáp với MAVAP Bot")
 
@@ -174,6 +185,18 @@ def clear_session():
     new_session_id = str(uuid4())
     st.session_state.session_id = new_session_id
     
+    # Tạo LangFuse handler mới với session_id mới
+    langfuse_handler = CallbackHandler(
+        secret_key=settings.LANGFUSE_CONF["secret_key"],    
+        public_key=settings.LANGFUSE_CONF["public_key"],
+        host=settings.LANGFUSE_CONF["host"],
+        # trace_name=settings.LANGFUSE_CONF["trace_name"],
+        trace_name="CGKT-Network",
+        enabled=settings.LANGFUSE_CONF["enabled"],
+        session_id=new_session_id,
+        version=settings.LANGFUSE_CONF["version"]
+    )
+    
     # Cập nhật config với session_id mới
     agent_id = "88886666-9999-4666-aaaa-88889999ffff"
     data = {
@@ -183,7 +206,7 @@ def clear_session():
         "current_time": datetime.now(timezone(timedelta(hours=7))).strftime("%d/%m/%Y")
     }
     
-    st.session_state.config = {"configurable": data, "recursion_limit": 100}
+    st.session_state.config = {"configurable": data, "recursion_limit": 100, "callbacks": [langfuse_handler]}
     
     # Hiển thị thông báo thành công
     st.success("✅ Đã tạo phiên hội thoại mới!")

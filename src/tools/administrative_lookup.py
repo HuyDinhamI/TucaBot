@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 from src.ai_core.services import search_service
 from src.config import SearchConfig, ToolsConfig
 
-logger = logging. getLogger("uvicorn.error")
+logger = logging.getLogger("uvicorn.error")
 
 @tool
 async def lookup_administrative_division(
@@ -33,7 +33,7 @@ async def lookup_administrative_division(
         )
         
         if not results:
-            return f"Không tìm thấy thông tin địa chính cho: '{query}'. Có thể địa chính này chưa có thay đổi hoặc không có trong cơ sở dữ liệu."
+            return f"Không tìm thấy thông tin địa chính cho: '{query}'.Có thể địa chính này chưa có thay đổi hoặc không có trong cơ sở dữ liệu."
         
         # Format kết quả
         response = f"🏛️ **Kết quả tra cứu địa chính cho '{query}':**\n\n"
@@ -46,7 +46,7 @@ async def lookup_administrative_division(
             new_info = metadata.get('new_ward_name', {})
             
             if old_info and new_info:
-                response += f"**{i}. {metadata.get('old_ward_name', 'N/A')}**\n"
+                response += f"**{i}.{metadata.get('old_ward_name', 'N/A')}**\n"
                 response += f"**Trước sáp nhập:**\n"
                 response += f"   • Phường/Xã: {metadata.get('old_ward_name', 'N/A')} (Mã: {metadata.get('old_ward_code', 'N/A')})\n"
                 response += f"   • Quận/Huyện: {metadata.get('old_district_name', 'N/A')} (Mã: {metadata.get('old_district_code', 'N/A')})\n"
@@ -59,10 +59,10 @@ async def lookup_administrative_division(
                 response += "\n" + "─" * 50 + "\n\n"
             else:
                 # Fallback nếu cấu trúc dữ liệu khác
-                response += f"**{i}. {result.title if hasattr(result, 'title') else 'Kết quả'}**\n"
+                response += f"**{i}.{result.title if hasattr(result, 'title') else 'Kết quả'}**\n"
                 response += f"{result.content if hasattr(result, 'content') else 'Không có nội dung chi tiết'}\n\n"
         
-        response += "💡 **Lưu ý:** Thông tin trên dựa trên các nghị định sáp nhập hành chính của Chính phủ. Để biết thêm chi tiết, vui lòng tham khảo các văn bản pháp lý chính thức."
+        response += "💡 **Lưu ý:** Thông tin trên dựa trên các nghị định sáp nhập hành chính của Chính phủ.Để biết thêm chi tiết, vui lòng tham khảo các văn bản pháp lý chính thức."
         
         return response
         

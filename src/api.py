@@ -14,7 +14,7 @@ from fastapi import (
     BackgroundTasks,
 )
 from pydantic import BaseModel, HttpUrl, Field
-# from langfuse.callback import CallbackHandler
+from langfuse.callback import CallbackHandler
 from sse_starlette.sse import EventSourceResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
@@ -355,16 +355,17 @@ async def dispatch(
         "config": config.copy(),
         "runs": [],
     }
-    # langfuse_handler = CallbackHandler(
-    #     secret_key=settings.LANGFUSE_CONF["secret_key"],
-    #     public_key=settings.LANGFUSE_CONF["public_key"],
-    #     host=settings.LANGFUSE_CONF["host"],
-    #     trace_name=settings.LANGFUSE_CONF["trace_name"],
-    #     enabled=settings.LANGFUSE_CONF["enabled"],
-    #     session_id=session_id,
-    #     user_id=config.get("configurable", {}).get("user_id", ""),
-    #     version=settings.LANGFUSE_CONF["version"],
-    # )
+    
+    langfuse_handler = CallbackHandler(
+        secret_key=settings.LANGFUSE_CONF["secret_key"],
+        public_key=settings.LANGFUSE_CONF["public_key"],
+        host=settings.LANGFUSE_CONF["host"],
+        trace_name=settings.LANGFUSE_CONF["trace_name"],
+        enabled=settings.LANGFUSE_CONF["enabled"],
+        session_id=session_id,
+        user_id=config.get("configurable", {}).get("user_id", ""),
+        version=settings.LANGFUSE_CONF["version"],
+    )
     if "configurable" not in config:
         config["configurable"] = {}
 
