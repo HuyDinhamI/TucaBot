@@ -1,0 +1,84 @@
+<! DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAVAP Chatbot</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="chat-header">
+            <div class="header-left">
+                <h1>🤖 MAVAP Bot</h1>
+                <span class="session-id" id="sessionId"></span>
+            </div>
+            <div class="header-right">
+                <button id="themeToggle" class="icon-button" title="Đổi theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button id="clearBtn" class="icon-button" title="Xóa hội thoại">
+                    <span>🗑️</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <div class="chat-container">
+            <!-- Thinking Box -->
+            <div class="thinking-section" id="thinkingSection">
+                <div class="thinking-header" id="thinkingHeader">
+                    <span class="thinking-title">💭 Thinking Process</span>
+                    <button class="toggle-btn" id="toggleThinking">
+                        <span class="arrow">▼</span>
+                    </button>
+                </div>
+                <div class="thinking-content" id="thinkingContent">
+                    <div class="thinking-empty">Chưa có quá trình suy nghĩ...</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h2>Xin chào!  👋</h2>
+                    <p>Tôi là MAVAP Bot, trợ lý ảo của bạn.Hãy đặt câu hỏi để bắt đầu! </p>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Nhập tin nhắn của bạn..." 
+                    rows="1"
+                    maxlength="10000"
+                ></textarea>
+                <button id="sendBtn" class="send-button" title="Gửi tin nhắn">
+                    <span>📤</span>
+                </button>
+            </div>
+            <div class="input-footer">
+                <span class="char-counter" id="charCounter">0 / 10000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

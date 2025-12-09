@@ -1,0 +1,213 @@
+<! DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAVAP Chatbot Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background:  #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .feature {
+            display: flex;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .feature-text h3 {
+            margin: 0 0 5px 0;
+            color:  #333;
+        }
+        .feature-text p {
+            margin: 0;
+            color:  #666;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #2196F3;
+            color:  white;
+            text-decoration:  none;
+            border-radius:  8px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        .btn-secondary {
+            background: #666;
+        }
+        .btn-secondary:hover {
+            background: #555;
+        }
+        .status {
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+            margin:  20px 0;
+        }
+        .status strong {
+            color: #1976D2;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius:  4px;
+            font-family:  'Courier New', monospace;
+            font-size: 14px;
+        }
+        .steps {
+            background: #fff9e6;
+            padding: 20px;
+            border-radius:  8px;
+            margin:  20px 0;
+        }
+        .steps ol {
+            margin:  10px 0;
+            padding-left: 20px;
+        }
+        .steps li {
+            margin: 10px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🤖 MAVAP Chatbot</h1>
+        <p class="subtitle">Giao diện chat hiện đại với HTML/CSS/JavaScript</p>
+
+        <div class="status">
+            <strong>📍 Trạng thái: </strong> Giao diện đã sẵn sàng!  Backend API cần được khởi động.
+        </div>
+
+        <h2>✨ Tính năng</h2>
+        
+        <div class="feature">
+            <div class="feature-icon">🎨</div>
+            <div class="feature-text">
+                <h3>Dark/Light Mode</h3>
+                <p>Chuyển đổi theme sáng/tối mượt mà với lưu trạng thái</p>
+            </div>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">💭</div>
+            <div class="feature-text">
+                <h3>Thinking Process Box</h3>
+                <p>Hiển thị quá trình suy nghĩ của AI trong box riêng biệt</p>
+            </div>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-text">
+                <h3>Real-time Streaming</h3>
+                <p>SSE streaming từ backend với typing indicator</p>
+            </div>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">💾</div>
+            <div class="feature-text">
+                <h3>Session Management</h3>
+                <p>Lưu lịch sử chat và session vào localStorage</p>
+            </div>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">📱</div>
+            <div class="feature-text">
+                <h3>Responsive Design</h3>
+                <p>Hoạt động tốt trên mọi thiết bị và kích thước màn hình</p>
+            </div>
+        </div>
+
+        <div class="steps">
+            <h3>🚀 Cách sử dụng: </h3>
+            <ol>
+                <li>Khởi động backend API:  <code>python src/api.py</code></li>
+                <li>Mở file <code>index.html</code> trong trình duyệt</li>
+                <li>Hoặc chạy: <code>cd frontend && python -m http.server 8000</code></li>
+                <li>Truy cập: <code>http://localhost:8000</code></li>
+            </ol>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <a href="index.html" class="btn">🚀 Mở Chatbot</a>
+            <a href="README.md" class="btn btn-secondary">📖 Xem Hướng dẫn</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Cấu trúc Project</h2>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto;">
+frontend/
+├── index.html          # Giao diện chính
+├── demo.html           # File này
+├── README.md           # Hướng dẫn chi tiết
+├── css/
+│   └── style.css       # Styling với Dark/Light themes
+└── js/
+    └── app.js          # Logic xử lý chat và SSE
+        </pre>
+    </div>
+
+    <div class="card">
+        <h2>🔧 Cấu hình API</h2>
+        <p>Mặc định API URL: <code>http://localhost:9998/mavap/api</code></p>
+        <p>Để thay đổi, sửa trong file <code>js/app.js</code>:</p>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto;">
+const CONFIG = {
+    API_BASE_URL:  'http://localhost:9998/mavap/api',
+    // ...
+};</pre>
+    </div>
+
+    <div class="card">
+        <h2>🎯 Event Handling</h2>
+        <p>Frontend xử lý các events từ LangGraph:</p>
+        <ul style="color: #666;">
+            <li><strong>on_think_event:</strong> Hiển thị trong Thinking Box</li>
+            <li><strong>on_answer_event: </strong> Hiển thị câu trả lời chính</li>
+            <li><strong>on_blocked_event:</strong> Cảnh báo nội dung bị chặn</li>
+            <li><strong>on_chat_model_stream:</strong> Stream text từ LLM</li>
+            <li><strong>Node-specific events:</strong> ask_user, gather_user_information_agent, general_agent, answer_agent</li>
+        </ul>
+    </div>
+
+    <div class="card" style="text-align: center; color: #666;">
+        <p>Được tạo bởi Cline AI Assistant 🤖</p>
+        <p style="font-size: 14px;">MIT License © 2025</p>
+    </div>
+</body>
+</html>

@@ -272,25 +272,25 @@ async def process_events():
                     yield "\n\n**</think>**\n\n"
                     start_think = False
 
-                if event["metadata"]. get("langgraph_node") == "ask_user":
+                if event["metadata"].get("langgraph_node") == "ask_user":
                     # Trích xuất nội dung từ cấu trúc mới
                     content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
                     if content:
                         yield content
 
-                if event["metadata"]. get("langgraph_node") == "gather_user_information_agent":
+                if event["metadata"].get("langgraph_node") == "gather_user_information_agent":
                     # Trích xuất nội dung từ cấu trúc mới
                     content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
                     if content:
                         yield content
 
-                if event["metadata"]. get("langgraph_node") == "general_agent":
+                if event["metadata"].get("langgraph_node") == "general_agent":
                     # Trích xuất nội dung từ cấu trúc mới
                     content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
                     if content:
                         yield content
 
-                if event["metadata"]. get("langgraph_node") == "answer_agent":
+                if event["metadata"].get("langgraph_node") == "answer_agent":
                     # Trích xuất nội dung từ cấu trúc mới
                     content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
                     if content:
