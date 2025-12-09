@@ -52,7 +52,6 @@ class HybridSearch:
                     content=chunk.metadata.get("content", ""),
                     score=chunk.metadata.get("score", ""),
                     app_ids=chunk.metadata.get("app_ids", []),
-                    document_id=chunk.metadata.get("document_id", ""),
                     chunk_index=chunk.metadata.get("chunk_index", 0),
                     url=chunk.metadata.get("url", ""),
                     document_metadata=chunk.metadata.get("document_metadata", ""),
@@ -107,7 +106,6 @@ class HybridSearch:
                     content=metadata.get("content", ""),
                     score=1.0,  # Set score to 1.0 for exact ID match
                     app_ids=metadata.get("app_ids", []),
-                    document_id=metadata.get("document_id", ""),
                     chunk_index=metadata.get("chunk_index", 0),
                     url=metadata.get("url", ""),
                     document_metadata=metadata.get("document_metadata", ""),

@@ -15,10 +15,6 @@ class DocumentChunk(BaseModel):
     )
     title: Optional[str] = Field(default="", description="Title of the chunk")
     content: str = Field(description="Text content of the chunk")
-    document_id: str = Field(
-        default=None,
-        description="ID of the document that this chunk belongs to"
-    )
     app_ids: List[str] = Field(
         default=[],
         description="List of application IDs that this chunk is associated with"
@@ -39,7 +35,7 @@ class DocumentChunk(BaseModel):
         default=None,
         description="Current status of the chunk (True = success, False = failed)",
     )
-    published: bool = Field(
+    published:  bool = Field(
         default=False,
         description="Publish status of the chunk (True = published, False = draft)",
     )
@@ -49,24 +45,23 @@ class DocumentChunk(BaseModel):
     )
 
     # Validate and convert UUID strings
-    @field_validator("id", "document_id")
+    @field_validator("id")
     @classmethod
-    def validate_uuid(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+    def validate_uuid(cls, v:  Optional[str]) -> Optional[str]:
+        if v is None: 
             return v
         try:
             # Verify it's a valid UUID by attempting to parse it
             UUID(v)
             return v
-        except ValueError:
+        except ValueError: 
             raise ValueError("Invalid UUID string")
 
     @model_validator(mode="after")
     def set_defaults(self) -> "DocumentChunk":
         if self.id is None:
             self.id = str(uuid4())
-        if self.document_id is None:
-            self.document_id = str(uuid4())
+        return self
     
     @computed_field
     @property
@@ -93,9 +88,8 @@ class DocumentChunk(BaseModel):
         # Tạo dict cho metadata với explicit type casting
         metadata = {
             "id": self.id,
-            "document_id": self.document_id,
             "app_ids": self.app_ids,
-            "chunk_index": int(self.chunk_index),  # Ensure integer
+            "chunk_index":  int(self.chunk_index),  # Ensure integer
             "title": self.title,
             "content": self.content,
             "hit_count": int(self.hit_count),  # Ensure integer
@@ -127,10 +121,6 @@ class SearchResult(BaseModel):
     app_ids: List[str] = Field(
         default=[],
         description="List of application IDs that this chunk is associated with"
-    )
-    document_id: Optional[str] = Field(
-        default=None,
-        description="ID of the document that this chunk belongs to"
     )
     chunk_index: Optional[int] = Field(
         default=0,

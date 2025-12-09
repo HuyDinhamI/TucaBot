@@ -1,6 +1,6 @@
 vector_storage:
   url: http://103.90.224.126:9200
-  index_name: mavap-data
+  index_name: mavap
   score_threshold: 0.5
   top_k: 5
   max_chars: 120000
@@ -18,6 +18,7 @@ vector_storage:
 embedding:
   qwen:
     url: http://103.90.224.126:8888
+    # url: http://10.8.28.250:8888
     api-key: MAVAP
     batch_size: 4
     accounting_prompt: "Cho một câu truy vấn thuộc lĩnh vực thủ tục hành chính công, hãy truy xuất các đoạn văn có liên quan trả lời truy vấn đó."

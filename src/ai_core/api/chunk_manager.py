@@ -22,15 +22,13 @@ logger = logging.getLogger("Controller")
 class ChunkManager():
     async def get_chunks(
         self,
-        document_ids: Optional[List[str]] = None,
         chunk_ids: Optional[List[str]] = None,
-        offset: int = 0,
+        offset:  int = 0,
         limit: int = 10,
         filters: Optional[List[dict]] = None
-    ) -> Tuple[List[dict], int]:
+    ) -> Tuple[List[dict], int]: 
         
         return await chunk_service.get_chunks(
-            document_ids=document_ids,
             chunk_ids=chunk_ids,
             offset=offset,
             limit=limit,

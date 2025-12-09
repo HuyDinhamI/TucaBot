@@ -82,7 +82,6 @@ class AVAElasticsearchStore(ElasticsearchStore):
         self.index_name = index_name
         self._store.metadata_mappings = {
             "id": {"type": "keyword"},
-            "document_id": {"type": "keyword"},
             "app_ids": {"type": "keyword"},
             "chunk_index": {"type": "integer"},
             "hit_count": {"type": "integer"},
@@ -106,14 +105,10 @@ class AVAElasticsearchStore(ElasticsearchStore):
         return info
 
     async def get_chunks(
-        self, document_ids, chunk_ids, offset, limit, filters=None
+        self, chunk_ids, offset, limit, filters=None
     ) -> Tuple[List[DocumentChunk], int]:
         query = {"query": {"bool": {"must": []}}, "from": offset, "size": limit}
 
-        if document_ids:
-            query["query"]["bool"]["must"].append(
-                {"terms": {"metadata.document_id": document_ids}}
-            )
         if chunk_ids:
             query["query"]["bool"]["must"].append({"terms": {"_id": chunk_ids}})
         

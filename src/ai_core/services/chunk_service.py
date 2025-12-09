@@ -12,17 +12,16 @@ class ChunkService:
 
     async def get_chunks(
         self,
-        document_ids: Optional[List[str]] = None,
         chunk_ids: Optional[List[str]] = None,
         offset: int = 0,
         limit: int = 10,
         filters: Optional[List[dict]] = None
-    ) -> Tuple[List[dict], int]:
+    ) -> Tuple[List[dict], int]: 
         """
         Retrieves chunks from the database based on the provided filters.
         """
         
-        chunks, total = await self.vector_store.get_chunks(document_ids, chunk_ids, offset, limit, filters)
+        chunks, total = await self.vector_store.get_chunks(None, chunk_ids, offset, limit, filters)
 
         return chunks, total
     

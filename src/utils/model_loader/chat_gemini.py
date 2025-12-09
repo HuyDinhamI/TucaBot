@@ -384,16 +384,70 @@ class ChatGoogleGenerativeAI:
         for tool in tools:
             if isinstance(tool, BaseTool):
                 state_args: dict = _get_state_args(tool)
-                converted_tools.append({
-                    "name": tool.name,
+                
+                # Get JSON schema from Pydantic model if available
+                properties = {}
+                required = []
+                
+                if hasattr(tool, 'args_schema') and tool.args_schema:
+                    try:
+                        # Get the JSON schema from Pydantic model
+                        json_schema = tool.args_schema.model_json_schema()
+                        raw_properties = json_schema.get('properties', {})
+                        
+                        # Filter out state args and clean properties
+                        for key, value in raw_properties.items():
+                            if key not in state_args:
+                                # Create clean property without Pydantic-specific fields
+                                clean_prop = {}
+                                
+                                # Copy only standard JSON schema fields
+                                if 'type' in value: 
+                                    clean_prop['type'] = value['type']
+                                if 'description' in value:
+                                    clean_prop['description'] = value['description']
+                                if 'default' in value:
+                                    clean_prop['default'] = value['default']
+                                if 'enum' in value:
+                                    clean_prop['enum'] = value['enum']
+                                if 'items' in value:
+                                    clean_prop['items'] = value['items']
+                                if 'format' in value:
+                                    clean_prop['format'] = value['format']
+                                    
+                                properties[key] = clean_prop
+                        
+                        # Get required fields
+                        required = [
+                            k for k in json_schema.get('required', [])
+                            if k not in state_args
+                        ]
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to get JSON schema for tool {tool.name}: {e}")
+                        # Fallback:  try to use tool. args directly
+                        properties = {}
+                        
+                elif hasattr(tool, 'args'):
+                    # Fallback for tools without args_schema
+                    for key, value in tool.args. items():
+                        if key not in state_args:
+                            properties[key] = {"type": "string"}
+                
+                tool_def = {
+                    "name":  tool.name,
                     "description": tool.description,
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            arg: v for arg, v in tool.args.items() if arg not in state_args
-                        },
+                        "properties": properties,
                     }
-                })
+                }
+                
+                if required:
+                    tool_def["parameters"]["required"] = required
+                    
+                converted_tools.append(tool_def)
+                
             elif isinstance(tool, dict) and tool.get("function"):
                 converted_tools.append(tool.get("function", {}))
             elif isinstance(tool, dict) and tool.get("name"):

@@ -8,18 +8,10 @@ class Status(Enum):
     PUBLISHED = 1
     DISABLED = 2
     ENABLED = 3
+
 class GetChunkResponse(BaseModel):
     chunks: List[dict[str, Any]]
     total: int
-    
-class GetStatusRequest(BaseModel):
-    document_ids: Optional[List[str]] = Field(None, description="List of document IDs, document ID is a string UUID"),
-    # chunk_ids: Optional[List[str]] = Field(None, description="List of chunk IDs, chunk ID is a string UUID")
-
-class ChunksStatusResponse(BaseModel):
-    chunk_id: str
-    document_id: str
-    embedding_status: bool
 
 class CreateChunkRequest(BaseModel):
     """Schema for chunk creation request"""
@@ -32,9 +24,6 @@ class CreateChunkRequest(BaseModel):
     app_ids: List[str] = Field(
         default=[],
         description="List of application IDs that this chunk is associated with"
-    )
-    document_id: str = Field(
-        description="StringUUID of the document that this chunk belongs to"
     )
     chunk_index: int = Field(
         default=0,
@@ -52,7 +41,6 @@ class CreateChunkRequest(BaseModel):
             id=self.id,
             title=self.title,
             content=self.content,
-            document_id=self.document_id,
             chunk_index=self.chunk_index,
             embedding_status=embedding_status,
             document_metadata=self.document_metadata
@@ -69,27 +57,6 @@ class UpdateChunkRequest(BaseModel):
     )
     title: Optional[str] = Field(default=None, description="Title of the chunk")
     content: Optional[str] = Field(default=None, description="Text content of the chunk")
-    
-    
-class UpdateStatusRequest(BaseModel):
-    """Schema for chunk publish request"""
-    document_ids: List[str] = Field(
-        description="List of document IDs, document ID is a string UUID",
-    )
-    action: Status = Field(
-        description=(
-            "Action to be performed on the document chunk.Possible values are:\n"
-            "- UNPUBLISHED (0): Set the document to unpublished status.\n"
-            "- PUBLISHED (1): Set the document to published status.\n"
-            "- DISABLED (2): Disable the document, making it inaccessible.\n"
-            "- ENABLED (3): Enable the document, making it accessible."
-        )
-    )
-    
-class UpdateStatusResponse(BaseModel):
-    message: str
-    updated_count: int
-    chunk_ids: List[str]
 
 class OperationChunkResponse(BaseModel):
     success_ids: List[str]
@@ -124,10 +91,6 @@ class SearchResult(BaseModel):
         default=0.0,
         description="Score of the document chunk"
     )
-    document_id: Optional[str] = Field(
-        default=None,
-        description="ID of the document that this chunk belongs to"
-    )
     chunk_index: Optional[int] = Field(
         default=0,
         description="Sequential position index of the chunk in the original document"
@@ -140,13 +103,3 @@ class SearchResult(BaseModel):
         {},
         description="Document metadata including name, data source type, file ID, etc."
     )
-
-class VBPLStatusRequest(BaseModel):
-    app_id: str = Field(description="Application ID")
-    number: str = Field(description="VBPL number (e.g., '65/2013/NĐ-CP')")
-
-class VBPLStatusResponse(BaseModel):
-    effective_date: Optional[str] = Field(None, description="Ngày có hiệu lực")
-    expiration_date: Optional[str] = Field(None, description="Ngày hết hiệu lực")
-    found: bool = Field(description="Có tìm thấy VBPL hay không")
-    number: str = Field(description="Số hiệu VBPL")

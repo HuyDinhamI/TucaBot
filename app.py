@@ -261,6 +261,12 @@ async def process_events():
                     if content:
                         yield content
 
+                if event["metadata"]. get("langgraph_node") == "general_agent":
+                    # Trích xuất nội dung từ cấu trúc mới
+                    content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
+                    if content:
+                        yield content
+
                 if event["metadata"]. get("langgraph_node") == "answer_agent":
                     # Trích xuất nội dung từ cấu trúc mới
                     content = event["data"].get("chunk", {}).get("content") if event["data"].get("chunk") else event["data"].get("text")
