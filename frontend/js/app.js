@@ -420,7 +420,7 @@ class ChatManager {
     }
 
     async sendMessage() {
-        const message = this.ui.elements.messageInput.value.trim();
+        const message = this.ui.elements. messageInput.value.trim();
         
         if (!message || this.state.isStreaming) {
             return;
@@ -433,12 +433,12 @@ class ChatManager {
         // Clear input
         this.ui.elements.messageInput.value = '';
         this.ui.elements.messageInput.style.height = 'auto';
-        this.ui.updateCharCounter(0, 10000);
+        this. ui.updateCharCounter(0, 10000);
 
         // Show typing indicator
-        this.ui.showTypingIndicator();
+        this.ui. showTypingIndicator();
         this.ui.setInputEnabled(false);
-        this.state.isStreaming = true;
+        this.state. isStreaming = true;
 
         // Clear thinking
         this.ui.clearThinkingContent();
@@ -448,6 +448,14 @@ class ChatManager {
             let isThinking = false;
 
             for await (const event of this.api.streamChat(message)) {
+                // 🔍 DEBUG: Log all events
+                console.log('📨 [EVENT]', {
+                    type: event.event,
+                    name: event.name,
+                    node: event.metadata?.langgraph_node,
+                    data:  event.data
+                });
+
                 this.ui.hideTypingIndicator();
 
                 if (event.event === 'on_custom_event') {
@@ -462,8 +470,12 @@ class ChatManager {
                         isThinking = false;
                         const content = event.data?.chunk?.content || event.data?.text || '';
                         if (content) {
+                            // 🔍 DEBUG: Check for URLs in content
+                            if (content.includes('http://') || content.includes('https://')) {
+                                console.log('🔗 [LINK DETECTED]', content);
+                            }
                             botResponse += content;
-                            this.ui.appendToBotMessage(content);
+                            this.ui. appendToBotMessage(content);
                         }
                     } else if (event.name === 'on_blocked_event') {
                         const text = event.data?.chunk?.content || event.data?.text || 'Nội dung bị chặn';
@@ -479,8 +491,12 @@ class ChatManager {
                         const node = metadata.langgraph_node;
                         
                         if (['ask_user', 'gather_user_information_agent', 'general_agent', 'answer_agent', 'document_agent'].includes(node)) {
-                            const content = event.data?.chunk?.content || event.data?.text || '';
+                            const content = event.data?. chunk?.content || event.data?. text || '';
                             if (content) {
+                                // 🔍 DEBUG: Check for URLs in content
+                                if (content.includes('http://') || content.includes('https://')) {
+                                    console.log('🔗 [LINK DETECTED in node]', node, content);
+                                }
                                 botResponse += content;
                                 this.ui.appendToBotMessage(content);
                             }
@@ -490,6 +506,10 @@ class ChatManager {
                     isThinking = false;
                     const content = event.data?.chunk?.content || '';
                     if (content) {
+                        // 🔍 DEBUG: Check for URLs in content
+                        if (content.includes('http://') || content.includes('https://')) {
+                            console.log('🔗 [LINK DETECTED in stream]', content);
+                        }
                         botResponse += content;
                         this.ui.appendToBotMessage(content);
                     }
@@ -497,8 +517,17 @@ class ChatManager {
             }
 
             // Finalize bot message
-            this.ui.finalizeBotMessage();
+            this.ui. finalizeBotMessage();
             if (botResponse) {
+                // 🔍 DEBUG: Log final response with links
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                const urls = botResponse.match(urlRegex);
+                if (urls && urls.length > 0) {
+                    console.log('🔗 [FINAL LINKS]', urls);
+                    urls.forEach(url => {
+                        console.log('  └─ ', url);
+                    });
+                }
                 this.state.addMessage('assistant', botResponse);
             }
 
