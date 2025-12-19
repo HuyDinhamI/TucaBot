@@ -2,7 +2,7 @@
 // Configuration
 // ============================================
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:9998/mavap/api',
+    API_BASE_URL: 'http://localhost:1112/mavap/api',
     STORAGE_KEYS: {
         SESSION_ID: 'mavap_session_id',
         CHAT_HISTORY: 'mavap_chat_history',
@@ -478,7 +478,7 @@ class ChatManager {
                         const metadata = event.metadata || {};
                         const node = metadata.langgraph_node;
                         
-                        if (['ask_user', 'gather_user_information_agent', 'general_agent', 'answer_agent'].includes(node)) {
+                        if (['ask_user', 'gather_user_information_agent', 'general_agent', 'answer_agent', 'document_agent'].includes(node)) {
                             const content = event.data?.chunk?.content || event.data?.text || '';
                             if (content) {
                                 botResponse += content;

@@ -1,6 +1,7 @@
 vector_storage:
+  # url: http://10.0.6.128:9200
   url: http://103.90.224.126:9200
-  index_name: mavap
+  index_name: mavap-data
   score_threshold: 0.5
   top_k: 5
   max_chars: 120000
@@ -17,14 +18,15 @@ vector_storage:
 
 embedding:
   qwen:
-    url: http://103.90.224.126:8888
-    # url: http://10.8.28.250:8888
+    # url: http://103.90.224.126:8888
+    url: http://10.8.28.250:1234
     api-key: MAVAP
     batch_size: 4
     accounting_prompt: "Cho một câu truy vấn thuộc lĩnh vực thủ tục hành chính công, hãy truy xuất các đoạn văn có liên quan trả lời truy vấn đó."
     general_prompt: "Given a web search query, retrieve relevant passages that answer the query"
     dim_size: 1024
-    model_name: Qwen/Qwen3-Embedding-0.6B
+    model_name: mavap/embed
+
 
 
 

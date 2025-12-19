@@ -69,11 +69,11 @@ async def get_template_document(
                     }
                 
                 # Auto-detect bucket
-                bucket_name = "dataset"
+                bucket_name = "mavap-document"
                 actual_file_path = file_path
                 if "/" in file_path:
                     potential_bucket = file_path.split("/")[0]
-                    common_buckets = ["dataset", "documents", "default", "maudon"]
+                    common_buckets = ["mavap-document"]
                     if potential_bucket in common_buckets:
                         bucket_name = potential_bucket
                         actual_file_path = "/".join(file_path.split("/")[1:])

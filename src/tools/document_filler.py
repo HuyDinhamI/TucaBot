@@ -7,7 +7,8 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolArg
+from langchain_core.runnables import RunnableConfig
 from docx import Document
 import asyncio
 
@@ -103,11 +104,12 @@ class MappingResult(BaseModel):
 @tool
 async def generate_filled_document(
     document_type: str = Field(
-        description="Loại mẫu đơn cần điền, ví dụ: 'khai sinh', 'ly hôn', 'đăng ký cư trú'"
+        description="Loại mẫu đơn cần điền, ví dụ:   'khai sinh', 'ly hôn', 'đăng ký cư trú'"
     ),
     user_provided_info: str = Field(
         description="Thông tin người dùng cung cấp dưới dạng text tự nhiên để điền vào mẫu đơn"
-    )
+    ),
+    config: RunnableConfig = InjectedToolArg()
 ) -> dict:
     """
     Sử dụng AI để phân tích thông tin người dùng và tạo file mẫu đơn đã được điền sẵn thông tin.
@@ -119,7 +121,7 @@ async def generate_filled_document(
         
         # Step 1: Tìm kiếm mẫu đơn có placeholder
         results: list[SearchResult] = await search_service.search(
-            app_id=ToolsConfig. document_template_app_id,
+            app_id="c5c42380-3e7a-4b8d-b6f3-51c6c9e7e4f1",
             query=f"mẫu đơn {document_type}",
             top_k=3,
             score_threshold=0.3,
@@ -181,29 +183,26 @@ async def generate_filled_document(
         mapping_result = await _ai_map_user_info_to_placeholders(
             user_provided_info, 
             unique_placeholders,
-            document_type
+            document_type,
+            config=config
         )
         
         if not mapping_result["success"]:
             return mapping_result
         
-        # Step 5: Kiểm tra thông tin thiếu
+        # Step 5: Log missing fields nhưng KHÔNG chặn việc tạo file
+        # Các trường thiếu sẽ để trống trong file
         if mapping_result["missing_fields"]:
-            missing_list = ", ".join(mapping_result["missing_fields"])
-            return {
-                "success": False,
-                "message": f"Cần bổ sung thêm thông tin: {missing_list}",
-                "missing_fields": mapping_result["missing_fields"],
-                "current_mapping": mapping_result["mapping"],
-                "suggestion": "Vui lòng cung cấp đầy đủ thông tin trên để tôi có thể tạo mẫu đơn hoàn chỉnh"
-            }
+            logger.info(f"Missing fields will be left blank: {mapping_result['missing_fields']}")
         
         # Step 6: Download file placeholder và fill thông tin
+        # Luôn tiến hành tạo file với thông tin hiện có
         filled_file_result = await _download_and_fill_document(
             placeholder_file_path,
             mapping_result["mapping"],
             document_type,
-            best_result.title
+            best_result.title,
+            missing_fields=mapping_result. get("missing_fields", [])
         )
         
         return filled_file_result
@@ -217,9 +216,10 @@ async def generate_filled_document(
 
 
 async def _ai_map_user_info_to_placeholders(
-    user_info: str, 
-    placeholders: List[str], 
-    document_type: str
+    user_info:  str, 
+    placeholders:  List[str], 
+    document_type: str,
+    config: Optional[RunnableConfig] = None
 ) -> Dict:
     """Sử dụng Gemini AI để mapping thông tin người dùng với placeholders với enhanced error handling"""
     
@@ -267,7 +267,7 @@ OUTPUT (chỉ JSON thuần túy):
             messages = [HumanMessage(content=prompt)]
             
             # Get raw response first để debug
-            raw_response = await gemini_model.ainvoke(messages)
+            raw_response = await gemini_model.ainvoke(messages, config=config)
             ai_raw_response = raw_response.content if hasattr(raw_response, 'content') else str(raw_response)
             
             logger.info(f"Raw structured response length: {len(ai_raw_response)}")
@@ -276,9 +276,9 @@ OUTPUT (chỉ JSON thuần túy):
             # Try structured output
             structured_model = gemini_model.with_structured_output(MappingResult)
             
-            if structured_model:
+            if structured_model: 
                 logger.info("Using structured output approach")
-                result = await structured_model.ainvoke(messages)
+                result = await structured_model.ainvoke(messages, config=config)
                 
                 logger.info(f"Structured result mapping: {result.mapping}")
                 logger.info(f"Structured result confidence: {result.confidence}")
@@ -333,7 +333,7 @@ OUTPUT (chỉ JSON thuần túy):
             from langchain_core.messages import HumanMessage
             messages = [HumanMessage(content=prompt)]
             
-            response = await gemini_model.ainvoke(messages)
+            response = await gemini_model.ainvoke(messages, config=config)
             
             if hasattr(response, 'content'):
                 ai_raw_response = response.content
@@ -496,18 +496,19 @@ async def _download_and_fill_document(
     placeholder_file_path: str,
     mapping: Dict[str, str],
     document_type: str,
-    document_title: str
+    document_title: str,
+    missing_fields: List[str] = []
 ) -> Dict:
     """Download file placeholder và fill thông tin"""
     
     try:
         # Auto-detect bucket
-        bucket_name = "dataset"
+        bucket_name = "mavap-document-placeholder"
         actual_file_path = placeholder_file_path
         
         if "/" in placeholder_file_path:
             potential_bucket = placeholder_file_path.split("/")[0]
-            common_buckets = ["dataset", "documents", "default", "maudon"]
+            common_buckets = ["mavap-document-placeholder"]
             if potential_bucket in common_buckets:
                 bucket_name = potential_bucket
                 actual_file_path = "/".join(placeholder_file_path.split("/")[1:])
@@ -577,22 +578,38 @@ async def _download_and_fill_document(
             expires_hours=24
         )
         
-        if download_url:
+        if download_url: 
+            # Tạo message dựa trên missing_fields
+            if missing_fields:
+                message = f"✅ Mẫu đơn {document_type} đã được tạo với {len(mapping)}/{len(mapping) + len(missing_fields)} trường"
+                instructions = [
+                    f"✓ Đã điền {len(mapping)} trường thông tin",
+                    f"⚠️ Còn {len(missing_fields)} trường để trống (bạn cần tự điền): {', '.join(missing_fields[: 5])}{'...' if len(missing_fields) > 5 else ''}",
+                    "📝 Vui lòng mở file và kiểm tra kỹ",
+                    "✏️ Điền các thông tin còn thiếu vào các ô trống",
+                    "⏰ Link download có hiệu lực trong 24 giờ"
+                ]
+            else:
+                message = f"✅ Mẫu đơn {document_type} đã được điền đầy đủ thông tin"
+                instructions = [
+                    f"✓ Đã điền thành công {len(mapping)} trường thông tin",
+                    "📝 Vui lòng kiểm tra và xác nhận lại thông tin",
+                    "✏️ Chỉnh sửa nếu cần thiết",
+                    "⏰ Link download có hiệu lực trong 24 giờ"
+                ]
+            
             return {
-                "success": True,
-                "message": f"Mẫu đơn {document_type} đã được điền thông tin thành công",
-                "document_title": document_title,
+                "success":  True,
+                "message": message,
+                "document_title":  document_title,
                 "file_name": filled_filename,
                 "download_url": download_url,
                 "expires_in": "24 giờ",
                 "type": "filled_document",
                 "filled_fields": len(mapping),
-                "instructions": [
-                    "File đã được điền sẵn thông tin bạn cung cấp",
-                    "Vui lòng kiểm tra và chỉnh sửa nếu cần",
-                    "Mở file bằng Microsoft Word để xem chi tiết",
-                    "Link download có hiệu lực trong 24 giờ"
-                ]
+                "total_fields": len(mapping) + len(missing_fields),
+                "missing_fields_count": len(missing_fields),
+                "instructions": instructions
             }
         else:
             return {

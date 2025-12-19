@@ -6,15 +6,15 @@ connection:
 
 buckets:
   # Default bucket khi không detect được
-  default: "dataset"
+  default: "mavap-document"
   
   # Danh sách các bucket hợp lệ cho auto-detection
   # Dùng cho agent mẫu đơn
-  valid_buckets:
-    - "dataset"
-    - "documents"
-    - "default"
-    - "maudon"
+  # valid_buckets:
+  #   - "dataset"
+  #   - "documents"
+  #   - "default"
+  #   - "maudon"
   
   # Bucket cho các loại file khác nhau
-  filled_documents: "filled_documents"
+  filled_documents: "mavap-document-placeholder"

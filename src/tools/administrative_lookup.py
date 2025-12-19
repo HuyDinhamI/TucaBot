@@ -15,7 +15,7 @@ async def lookup_administrative_division(
     )
 ) -> str:
     """Tool tra cứu thông tin địa chính sau sáp nhập theo các nghị định của Chính phủ Việt Nam."""
-    
+    new_query = "Cập nhật địa giới hành chính" + query
     try:
         agent_id = SearchConfig.agent_id
         if agent_id is None:
@@ -24,14 +24,14 @@ async def lookup_administrative_division(
         # Tìm kiếm với filter chỉ lấy dữ liệu địa chính
         results = await search_service.search(
             app_id=ToolsConfig.administrative_lookup_app_id,
-            query=query,
-            top_k=10,
+            query=new_query,
+            top_k=2,
             score_threshold=0.5,
             filters=[
                 {"terms": {"metadata.app_ids": [ToolsConfig.administrative_lookup_app_id]}}
             ]
         )
-        
+        print(results)
         if not results:
             return f"Không tìm thấy thông tin địa chính cho: '{query}'.Có thể địa chính này chưa có thay đổi hoặc không có trong cơ sở dữ liệu."
         
@@ -63,6 +63,7 @@ async def lookup_administrative_division(
                 response += f"{result.content if hasattr(result, 'content') else 'Không có nội dung chi tiết'}\n\n"
         
         response += "💡 **Lưu ý:** Thông tin trên dựa trên các nghị định sáp nhập hành chính của Chính phủ.Để biết thêm chi tiết, vui lòng tham khảo các văn bản pháp lý chính thức."
+        
         
         return response
         
