@@ -6,7 +6,7 @@ from minio import Minio
 from minio.error import S3Error
 from src.config import MinioConfig
 
-logger = logging.getLogger("uvicorn. error")
+logger = logging.getLogger("uvicorn.error")
 
 class MinioService:
     """Service để kết nối và thao tác với Minio storage"""
@@ -117,7 +117,7 @@ class MinioService:
                 self.client.stat_object(bucket_name, file_path)
                 logger.info(f"File exists in bucket '{bucket_name}': {file_path}")
             except S3Error as stat_error:
-                logger.error(f"File not found in bucket '{bucket_name}': {file_path}. Error: {stat_error}")
+                logger.error(f"File not found in bucket '{bucket_name}': {file_path}.Error: {stat_error}")
                 return None
             
             # Tạo presigned URL

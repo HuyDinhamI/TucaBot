@@ -8,7 +8,8 @@ from ...base  import (
 )
 from ...tools import (
     search,
-    lookup_administrative_division
+    lookup_administrative_division,
+    check_online_admin_procedure
 )
 from ...config import AgentConfig
 from ...state import AgentState
@@ -30,7 +31,7 @@ search_agent = create_react_agent(
     # model=AgentConfig.models["gpt-4.1-mini"],
     model=AgentConfig.models["gemini-2.5-flash"],
     prompt=PROMPT_SEARCH,
-    tools=[search, lookup_administrative_division],
+    tools=[search, lookup_administrative_division, check_online_admin_procedure],
     handoff_tools=[
         handoff_tools["gather_user_information_agent"],
         handoff_tools["answer_draft_agent"]

@@ -4,11 +4,11 @@ from pydantic import Field
 from langchain_core.tools import tool
 
 from src.ai_core.services import search_service
-from src.ai_core.models. chunks import SearchResult
-from src. services.minio_service import minio_service
+from src.ai_core.models.chunks import SearchResult
+from src.services.minio_service import minio_service
 from src.config import ToolsConfig
 
-logger = logging. getLogger("uvicorn.error")
+logger = logging.getLogger("uvicorn.error")
 
 @tool
 async def get_template_document(
@@ -26,7 +26,7 @@ async def get_template_document(
         
         # Tìm kiếm mẫu đơn trong database
         results: list[SearchResult] = await search_service.search(
-            app_id=ToolsConfig. document_template_app_id,
+            app_id=ToolsConfig.document_template_app_id,
             query=f"mẫu đơn {document_type}",
             top_k=3,
             score_threshold=0.3,
