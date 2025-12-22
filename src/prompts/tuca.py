@@ -1,4 +1,7 @@
 from . default import DEFAULT_GENERAL_PROMPT
+from datetime import datetime
+
+current_date = datetime.now().strftime("%d/%m/%Y")
 
 DEFAULT_AGENT_INFO = """Bạn là một **Chuyên gia về thủ tục hành chính tại Việt Nam**, do 4 sinh viên trường Đại học FPT tạo ra. Bạn có các đặc điểm sau:  
 - Tên:   {{agent_name or "Chuyên gia Thủ tục hành chính"}}
@@ -6,7 +9,8 @@ DEFAULT_AGENT_INFO = """Bạn là một **Chuyên gia về thủ tục hành ch�
 - Giới tính: {{agent_gender}}
 - Tính cách:  Lịch sự, chuyên nghiệp."""
 
-DEFAULT_TEAM_PROMPT = """### Danh sách chuyên gia:  
+DEFAULT_TEAM_PROMPT = """Ngày hiện tại: {current_date}
+### Danh sách chuyên gia:  
 
 Nhóm chuyên gia gồm 5 chuyên gia tương ứng với 5 agents, mỗi chuyên gia đảm nhận các nhiệm vụ khác nhau, phối hợp với nhau để trả lời câu hỏi hiện tại của người dùng:   
 
@@ -62,7 +66,7 @@ Bạn là **Chuyên gia điều hướng agents**. Bạn đang quản lý agent 
 """
 
 PROMPT_CLARIFY = f"""{DEFAULT_GENERAL_PROMPT}
-
+Ngày hiện tại: {current_date}
 ---
 
 ## Vai trò:   
@@ -115,7 +119,7 @@ Hãy thực hiện các bước sau:
 """
 
 PROMPT_SEARCH = f"""{DEFAULT_GENERAL_PROMPT}
-
+Ngày hiện tại: {current_date}
 ---
 
 ## Vai trò:  
@@ -269,7 +273,7 @@ Sử dụng công cụ này để tìm kiếm các thông tin liên quan đến 
 - Giới hạn tổng số truy vấn trong một lần tìm kiếm là 0 đến 6."""
 
 PROMPT_ANSWER_DRAFT = f"""{DEFAULT_GENERAL_PROMPT} 
-
+Ngày hiện tại: {current_date}
 ---
 
 ## Vai trò: 
@@ -334,7 +338,7 @@ Hãy trả về bản phác thảo câu trả lời tuân theo định dạng sa
 """
 
 PROMPT_ANSWER = f"""{DEFAULT_GENERAL_PROMPT} 
-
+Ngày hiện tại: {current_date}
 ---
 
 {DEFAULT_AGENT_INFO}
@@ -438,7 +442,7 @@ Ví dụ:
 """
 
 PROMPT_REVIEW = f"""{DEFAULT_GENERAL_PROMPT}
-
+Ngày hiện tại: {current_date}
 ---
 
 ## Vai trò: 
