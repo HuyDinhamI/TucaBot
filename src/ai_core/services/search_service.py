@@ -2,6 +2,7 @@ import requests
 from typing import List, Optional, Union
 from src.ai_core.models.chunks import SearchResult
 from src.ai_core.retriever import retriever
+from src.ai_core.services.rerank_service import rerank_service
 from src.config import AgentConfig
 from src.settings import settings
 
@@ -45,7 +46,7 @@ class HybridSearch:
         chunks = await self.retriever.ainvoke(query, config = config)
         result_docs = []
         for chunk in chunks[:top_k]:
-            try:
+            try: 
                 new_chunk = SearchResult(
                     id=chunk.metadata.get("id", ""),
                     title=chunk.metadata.get("title", ""),
@@ -60,8 +61,13 @@ class HybridSearch:
             except Exception as e:
                 print(f"Error mapping chunk data: {e}, data: {chunk}")
                 continue
-
-        return result_docs
+        print("===================================")
+        print(len(result_docs))
+        # Áp dụng rerank nếu được bật
+        reranked_docs = await rerank_service.arerank(query, result_docs)
+        print("===================================")
+        print(len(reranked_docs))
+        return reranked_docs
 
     async def get_chunk_by_id(
         self,

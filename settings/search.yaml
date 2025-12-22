@@ -27,6 +27,8 @@ embedding:
     dim_size: 1024
     model_name: mavap/embed
 
-
-
-
+rerank:
+  url: http://103.78.3.91:3333/rerank
+  enabled: true
+  top_k: 3
+  timeout: 10

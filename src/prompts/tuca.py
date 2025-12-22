@@ -325,7 +325,8 @@ Hãy trả về bản phác thảo câu trả lời tuân theo định dạng sa
 3.Bản phác thảo câu trả lời:  
 
 **A.  Trình tự thực hiện**:  
-<Liệt kê các bước thực hiện thủ tục theo thứ tự.    Mỗi bước nên rõ ràng, cụ thể.   >
+<Liệt kê các bước thực hiện thủ tục theo thứ tự. Mỗi bước nên rõ ràng, cụ thể.> 
+Format bắt buộc phải tuần theo: Bước 1..... \n Bước 2..... \n ...
 
 **B. Thông tin tóm tắt**:  
 - Đối tượng: <Người dùng thuộc đối tượng nào?>
